@@ -97,7 +97,7 @@ export default function JibasDashboard({ stats }: DashboardProps) {
                             {greeting}, {user.name}! 👋
                         </h2>
                         <p className="text-sm text-gray-600 mt-1">
-                            Selamat datang di JIBAS Dashboard
+                            Selamat datang di E-Ponpes.id Dashboard
                         </p>
                     </div>
                     <div className="hidden md:block">
@@ -116,7 +116,7 @@ export default function JibasDashboard({ stats }: DashboardProps) {
                 </div>
             }
         >
-            <Head title="JIBAS Dashboard" />
+            <Head title="E-Ponpes.id Dashboard" />
 
             <div className="py-8">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
@@ -234,7 +234,7 @@ export default function JibasDashboard({ stats }: DashboardProps) {
                         <div className="flex flex-col md:flex-row items-center justify-between">
                             <div className="mb-4 md:mb-0">
                                 <h2 className="text-2xl font-bold mb-2">
-                                    Welcome to JIBAS! 🚀
+                                    Welcome to E-Ponpes.id! 🚀
                                 </h2>
                                 <p className="text-blue-100">
                                     Manage your projects efficiently and boost your productivity

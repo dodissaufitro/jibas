@@ -165,7 +165,7 @@ export default function CustomLogin({ status }: { status?: string }) {
                                 </a>
                             </p>
                             <p className="text-xs text-gray-500">
-                                © 2026 JIBAS. All rights reserved.
+                                © 2026 E-Ponpes.id. All rights reserved.
                             </p>
                         </div>
                     </div>

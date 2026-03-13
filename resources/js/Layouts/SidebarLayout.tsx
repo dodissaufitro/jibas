@@ -150,7 +150,7 @@ export default function SidebarLayout({ children }: PropsWithChildren) {
                         </div>
                         {sidebarOpen && (
                             <div>
-                                <h1 className="font-bold text-lg">JIBAS</h1>
+                                <h1 className="font-bold text-lg">E-Ponpes.id</h1>
                                 <p className="text-xs text-blue-300">Sistem Sekolah</p>
                             </div>
                         )}

@@ -137,7 +137,7 @@ export default function SchoolDashboard({ stats }: { stats: Stats }) {
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-3xl font-bold mb-2">
-                                Selamat Datang di JIBAS! 👋
+                                Selamat Datang di E-Ponpes.id 👋
                             </h1>
                             <p className="text-blue-100 text-lg">
                                 Sistem Informasi Sekolah Terintegrasi - Kelola semua kebutuhan sekolah dalam satu platform
