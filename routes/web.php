@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\GuruController;
+use App\Http\Controllers\InstitutionController;
 use App\Http\Controllers\JenjangController;
 use App\Http\Controllers\JurusanController;
 use App\Http\Controllers\KelasController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\TagihanController;
 use App\Http\Controllers\TahunAjaranController;
+use App\Modules\InstitutionSpecific\Pesantren\Hafalan\Controllers\HafalanController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -48,6 +50,17 @@ Route::get('/dashboard', function () {
         ]
     ]);
 })->middleware(['auth'])->name('dashboard');
+
+Route::get('/settings', function () {
+    return Inertia::render('Settings');
+})->middleware(['auth'])->name('settings');
+
+// Institution Settings API
+Route::middleware('auth')->prefix('api')->group(function () {
+    Route::get('/institution/settings', [InstitutionController::class, 'getSettings'])->name('api.institution.settings');
+    Route::post('/institution/settings', [InstitutionController::class, 'updateSettings'])->name('api.institution.update');
+    Route::post('/institution/share-access', [InstitutionController::class, 'shareAccess'])->name('api.institution.share');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -111,6 +124,48 @@ Route::middleware('auth')->group(function () {
         Route::get('/surat-keluar', fn() => Inertia::render('ComingSoon', ['module' => 'Admin - Surat Keluar']))->name('admin.surat-keluar');
         Route::get('/arsip', fn() => Inertia::render('ComingSoon', ['module' => 'Admin - Arsip Digital']))->name('admin.arsip');
         Route::get('/laporan', fn() => Inertia::render('ComingSoon', ['module' => 'Admin - Laporan']))->name('admin.laporan');
+    });
+
+    // Pesantren Routes (Institution-Specific)
+    Route::prefix('pesantren')->name('pesantren.')->group(function () {
+        Route::resource('hafalan', HafalanController::class);
+        Route::get('/hafalan/{siswaId}/progress', [HafalanController::class, 'progress'])->name('hafalan.progress');
+
+        // Izin Pulang
+        Route::resource('izin-pulang', \App\Modules\InstitutionSpecific\Pesantren\IzinPulang\Controllers\IzinPulangController::class)
+            ->only(['index', 'create', 'store', 'edit', 'update']);
+        Route::post('/izin-pulang/{id}/approve', [\App\Modules\InstitutionSpecific\Pesantren\IzinPulang\Controllers\IzinPulangController::class, 'approve'])
+            ->name('izin-pulang.approve');
+        Route::post('/izin-pulang/{id}/reject', [\App\Modules\InstitutionSpecific\Pesantren\IzinPulang\Controllers\IzinPulangController::class, 'reject'])
+            ->name('izin-pulang.reject');
+        Route::post('/izin-pulang/{id}/mark-return', [\App\Modules\InstitutionSpecific\Pesantren\IzinPulang\Controllers\IzinPulangController::class, 'markReturn'])
+            ->name('izin-pulang.mark-return');
+
+        // Placeholder routes - Coming Soon
+        Route::get('/asrama', fn() => Inertia::render('ComingSoon', ['module' => 'Pesantren - Manajemen Asrama']))->name('asrama.index');
+        Route::get('/akhlak', fn() => Inertia::render('ComingSoon', ['module' => 'Pesantren - Pembinaan Akhlak']))->name('akhlak.index');
+    });
+
+    // School Routes (Institution-Specific)
+    Route::prefix('school')->name('school.')->group(function () {
+        // Ekstrakurikuler
+        Route::resource('ekstrakurikuler', \App\Modules\InstitutionSpecific\School\Ekstrakurikuler\Controllers\EkstrakurikulerController::class);
+
+        // Prestasi
+        Route::resource('prestasi', \App\Modules\InstitutionSpecific\School\Analisis\Controllers\PrestasiController::class);
+
+        // Placeholder routes - Coming Soon
+        Route::get('/osis', fn() => Inertia::render('ComingSoon', ['module' => 'Sekolah - Organisasi OSIS']))->name('osis.index');
+    });
+
+    // Madrasah Routes (Institution-Specific)
+    Route::prefix('madrasah')->name('madrasah.')->group(function () {
+        // Evaluasi Ibadah
+        Route::resource('evaluasi-ibadah', \App\Modules\InstitutionSpecific\Madrasah\EvaluasiIbadah\Controllers\EvaluasiIbadahController::class);
+
+        // Placeholder routes - Coming Soon
+        Route::get('/nilai-agama', fn() => Inertia::render('ComingSoon', ['module' => 'Madrasah - Nilai Pelajaran Agama']))->name('nilai-agama.index');
+        Route::get('/kegiatan-keagamaan', fn() => Inertia::render('ComingSoon', ['module' => 'Madrasah - Kegiatan Keagamaan']))->name('kegiatan-keagamaan.index');
     });
 });
 

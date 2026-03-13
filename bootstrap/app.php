@@ -18,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Redirect unauthenticated users to custom login
         $middleware->redirectGuestsTo('/custom-login');
+
+        // Register middleware aliases
+        $middleware->alias([
+            'institution' => \App\Http\Middleware\CheckInstitutionType::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

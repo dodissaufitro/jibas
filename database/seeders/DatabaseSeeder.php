@@ -18,8 +18,8 @@ class DatabaseSeeder extends Seeder
     {
         // Create Admin User
         User::create([
-            'name' => 'Admin JIBAS',
-            'email' => 'admin@jibas.com',
+            'name' => 'Admin E-Ponpes',
+            'email' => 'admin@eponpes.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
         ]);
@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
         // Create Test User
         User::create([
             'name' => 'User Test',
-            'email' => 'user@jibas.com',
+            'email' => 'user@eponpes.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
         ]);
@@ -35,14 +35,14 @@ class DatabaseSeeder extends Seeder
         // Create additional demo users
         User::create([
             'name' => 'John Doe',
-            'email' => 'john@jibas.com',
+            'email' => 'john@eponpes.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
         ]);
 
         User::create([
             'name' => 'Jane Smith',
-            'email' => 'jane@jibas.com',
+            'email' => 'jane@eponpes.id',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
         ]);
