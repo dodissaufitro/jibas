@@ -14,8 +14,11 @@ use App\Http\Controllers\PresensiGuruController;
 use App\Http\Controllers\PresensiSiswaController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SiswaController;
+use App\Http\Controllers\SoalUjianController;
 use App\Http\Controllers\TagihanController;
 use App\Http\Controllers\TahunAjaranController;
+use App\Http\Controllers\UjianController;
+use App\Http\Controllers\UjianSiswaController;
 use App\Modules\InstitutionSpecific\Pesantren\Hafalan\Controllers\HafalanController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -96,6 +99,33 @@ Route::middleware('auth')->group(function () {
         Route::get('/raport', fn() => Inertia::render('ComingSoon', ['module' => 'Akademik - Raport']))->name('raport');
     });
 
+    // Ujian Routes
+    Route::resource('ujian', UjianController::class);
+
+    // Jadwal Ujian (calendar view)
+    Route::get('ujian-jadwal', [UjianController::class, 'jadwal'])->name('ujian.jadwal');
+
+    // Soal Ujian Routes (nested resource)
+    Route::prefix('ujian/{ujian}/soal')->name('ujian.soal.')->group(function () {
+        Route::get('/', [SoalUjianController::class, 'index'])->name('index');
+        Route::get('/create', [SoalUjianController::class, 'create'])->name('create');
+        Route::post('/', [SoalUjianController::class, 'store'])->name('store');
+        Route::get('/{soal}/edit', [SoalUjianController::class, 'edit'])->name('edit');
+        Route::put('/{soal}', [SoalUjianController::class, 'update'])->name('update');
+        Route::delete('/{soal}', [SoalUjianController::class, 'destroy'])->name('destroy');
+    });
+
+    // Ujian Siswa Routes (untuk siswa mengerjakan ujian)
+    Route::prefix('siswa/ujian')->name('siswa.ujian.')->group(function () {
+        Route::get('/', [UjianSiswaController::class, 'index'])->name('index');
+        Route::post('/akses-kode', [UjianSiswaController::class, 'aksesKode'])->name('akses-kode');
+        Route::get('/{ujian}/mulai', [UjianSiswaController::class, 'mulai'])->name('mulai');
+        Route::get('/{ujianSiswa}/kerjakan', [UjianSiswaController::class, 'kerjakan'])->name('kerjakan');
+        Route::post('/{ujianSiswa}/simpan-jawaban', [UjianSiswaController::class, 'simpanJawaban'])->name('simpan-jawaban');
+        Route::post('/{ujianSiswa}/submit', [UjianSiswaController::class, 'submit'])->name('submit');
+        Route::get('/{ujianSiswa}/hasil', [UjianSiswaController::class, 'hasil'])->name('hasil');
+    });
+
     // Presensi Routes
     Route::prefix('presensi')->name('presensi.')->group(function () {
         Route::resource('siswa', PresensiSiswaController::class);
@@ -141,8 +171,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/izin-pulang/{id}/mark-return', [\App\Modules\InstitutionSpecific\Pesantren\IzinPulang\Controllers\IzinPulangController::class, 'markReturn'])
             ->name('izin-pulang.mark-return');
 
-        // Placeholder routes - Coming Soon
-        Route::get('/asrama', fn() => Inertia::render('ComingSoon', ['module' => 'Pesantren - Manajemen Asrama']))->name('asrama.index');
+        // Asrama
+        Route::resource('asrama', \App\Modules\InstitutionSpecific\Pesantren\Asrama\Controllers\AsramaController::class)
+            ->only(['index', 'create', 'store', 'edit', 'update']);
         Route::get('/akhlak', fn() => Inertia::render('ComingSoon', ['module' => 'Pesantren - Pembinaan Akhlak']))->name('akhlak.index');
     });
 

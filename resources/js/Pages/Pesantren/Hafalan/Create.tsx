@@ -33,29 +33,34 @@ export default function Create({ santri }: Props) {
         <SidebarLayout>
             <Head title="Tambah Hafalan" />
 
-            <div className="py-6">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="relative py-6 sm:py-8">
+                <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                    <div className="absolute -top-16 left-10 h-56 w-56 rounded-full bg-emerald-200/40 blur-3xl" />
+                    <div className="absolute top-20 right-10 h-64 w-64 rounded-full bg-cyan-200/40 blur-3xl" />
+                </div>
+
+                <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Header */}
                     <div className="mb-6">
                         <Link
                             href={route('pesantren.hafalan.index')}
-                            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
+                            className="inline-flex items-center text-sm text-slate-600 hover:text-slate-900 mb-4"
                         >
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
                             Kembali
                         </Link>
-                        <h2 className="font-semibold text-2xl text-gray-800">
+                        <h2 className="font-semibold text-2xl text-slate-900">
                             Tambah Data Hafalan
                         </h2>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-slate-600 mt-1">
                             Input data setoran hafalan Al-Qur'an santri
                         </p>
                     </div>
 
                     {/* Form */}
-                    <div className="bg-white shadow-sm rounded-lg p-6">
+                    <div className="rounded-2xl border border-white/70 bg-white/85 p-6 shadow-[0_25px_65px_-35px_rgba(15,23,42,0.45)] backdrop-blur">
                         <form onSubmit={handleSubmit} className="space-y-6">
                             {/* Santri Selection */}
                             <div>
@@ -245,14 +250,14 @@ export default function Create({ santri }: Props) {
                             <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
                                 <Link
                                     href={route('pesantren.hafalan.index')}
-                                    className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                                    className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
                                 >
                                     Batal
                                 </Link>
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-lg transition hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {processing ? 'Menyimpan...' : 'Simpan Data'}
                                 </button>

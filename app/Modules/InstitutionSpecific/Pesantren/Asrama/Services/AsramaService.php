@@ -12,7 +12,7 @@ class AsramaService extends BaseService
     {
         $institutionId = $this->getInstitutionId();
         if (!$institutionId) {
-            throw new \Exception('User institution not found');
+            return Asrama::query()->whereRaw('1 = 0')->paginate($perPage);
         }
 
         $query = Asrama::query()

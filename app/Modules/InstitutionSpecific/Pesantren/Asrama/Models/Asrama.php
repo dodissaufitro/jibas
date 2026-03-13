@@ -4,6 +4,7 @@ namespace App\Modules\InstitutionSpecific\Pesantren\Asrama\Models;
 
 use App\Base\Models\BaseModel;
 use App\Models\Institution;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -37,7 +38,7 @@ class Asrama extends BaseModel
 
     public function pengurus(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Guru::class, 'pengurus_id');
+        return $this->belongsTo(User::class, 'pengurus_id');
     }
 
     public function kamar(): HasMany
