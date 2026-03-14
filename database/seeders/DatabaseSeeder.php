@@ -20,43 +20,11 @@ class DatabaseSeeder extends Seeder
             InstitutionSeeder::class,
             MasterDataSeeder::class,
             SiswaSeeder::class,
+            PermissionSeeder::class,  // Seed permissions and roles first
+            UserSeeder::class,         // Then create users with roles
         ]);
 
-        // Create Admin User
-        User::firstOrCreate([
-            'email' => 'admin@eponpes.id',
-        ], [
-            'name' => 'Admin E-Ponpes',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-        ]);
-
-        // Create Test User
-        User::firstOrCreate([
-            'email' => 'user@eponpes.id',
-        ], [
-            'name' => 'User Test',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-        ]);
-
-        // Create additional demo users
-        User::firstOrCreate([
-            'email' => 'john@eponpes.id',
-        ], [
-            'name' => 'John Doe',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-        ]);
-
-        User::firstOrCreate([
-            'email' => 'jane@eponpes.id',
-        ], [
-            'name' => 'Jane Smith',
-            'password' => Hash::make('password'),
-            'email_verified_at' => now(),
-        ]);
-
+        // Update users with default institution
         $defaultInstitutionId = \App\Models\Institution::query()->orderBy('id')->value('id');
         if ($defaultInstitutionId) {
             User::query()->whereNull('institution_id')->update(['institution_id' => $defaultInstitutionId]);

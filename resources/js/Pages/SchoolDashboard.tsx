@@ -1,5 +1,5 @@
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { useSettings } from '@/Contexts/SettingsContext';
 
 interface Stats {
@@ -11,6 +11,12 @@ interface Stats {
     presensiHariIni: number;
 }
 
+interface AuthProps {
+    user: { name: string; email: string };
+    permissions?: string[];
+    isSuperAdmin?: boolean;
+}
+
 export default function SchoolDashboard({ stats = {
     totalSiswa: 0,
     totalGuru: 0,
@@ -19,7 +25,18 @@ export default function SchoolDashboard({ stats = {
     tunggakan: 0,
     presensiHariIni: 0,
 } }: { stats?: Stats }) {
+    const page = usePage();
+    const auth = page.props.auth as AuthProps | undefined;
+    const permissions = auth?.permissions || [];
+    const isSuperAdmin = auth?.isSuperAdmin || false;
     const { isConfigured } = useSettings();
+    
+    // Check if user has permission
+    const hasPermission = (permission?: string): boolean => {
+        if (!permission) return true; // No permission required
+        if (isSuperAdmin) return true; // Super admin has all permissions
+        return permissions.includes(permission);
+    };
     
     const statCards = [
         {
@@ -72,14 +89,17 @@ export default function SchoolDashboard({ stats = {
         },
     ];
 
-    const quickLinks = [
-        { name: 'Input Nilai', icon: '📊', route: 'akademik.nilai', color: 'bg-blue-500' },
-        { name: 'Presensi Siswa', icon: '✓', route: 'presensi.siswa.index', color: 'bg-green-500' },
-        { name: 'Kelola PPDB', icon: '📋', route: 'ppdb.pendaftaran.index', color: 'bg-purple-500' },
-        { name: 'Pembayaran', icon: '💳', route: 'keuangan.pembayaran.index', color: 'bg-orange-500' },
-        { name: 'Jadwal', icon: '📅', route: 'akademik.jadwal.index', color: 'bg-pink-500' },
+    const allQuickLinks = [
+        { name: 'Input Nilai', icon: '📊', route: 'akademik.nilai', color: 'bg-blue-500', permission: 'input_nilai' },
+        { name: 'Presensi Siswa', icon: '✓', route: 'presensi.siswa.index', color: 'bg-green-500', permission: 'input_presensi_siswa' },
+        { name: 'Kelola PPDB', icon: '📋', route: 'ppdb.pendaftaran.index', color: 'bg-purple-500', permission: 'manage_ppdb_pendaftaran' },
+        { name: 'Pembayaran', icon: '💳', route: 'keuangan.pembayaran.index', color: 'bg-orange-500', permission: 'manage_pembayaran' },
+        { name: 'Jadwal', icon: '📅', route: 'akademik.jadwal.index', color: 'bg-pink-500', permission: 'view_jadwal_pelajaran' },
         { name: 'Laporan', icon: '📈', route: 'admin.laporan', color: 'bg-indigo-500' },
     ];
+
+    // Filter quick links based on permissions
+    const quickLinks = allQuickLinks.filter(link => hasPermission(link.permission));
 
     const recentActivities = [
         { 

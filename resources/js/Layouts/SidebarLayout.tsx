@@ -6,12 +6,22 @@ interface MenuItem {
     name: string;
     icon: ReactNode;
     route?: string;
-    submenu?: { name: string; route: string }[];
+    submenu?: { name: string; route: string; permission?: string }[];
+    permission?: string;
+}
+
+interface AuthProps {
+    user: { name: string; email: string };
+    permissions?: string[];
+    isSuperAdmin?: boolean;
 }
 
 export default function SidebarLayout({ children }: PropsWithChildren) {
     const page = usePage();
-    const user = page.props.auth?.user as { name: string; email: string } | undefined;
+    const auth = page.props.auth as AuthProps | undefined;
+    const user = auth?.user;
+    const permissions = auth?.permissions || [];
+    const isSuperAdmin = auth?.isSuperAdmin || false;
     const { settings } = useSettings();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -21,10 +31,18 @@ export default function SidebarLayout({ children }: PropsWithChildren) {
         return <div>Loading...</div>;
     }
 
+    // Check if user has permission
+    const hasPermission = (permission?: string): boolean => {
+        if (!permission) return true; // No permission required
+        if (isSuperAdmin) return true; // Super admin has all permissions
+        return permissions.includes(permission);
+    };
+
     const menuItems: MenuItem[] = [
         {
             name: 'Dashboard',
             route: 'dashboard',
+            permission: 'view_dashboard',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -33,51 +51,55 @@ export default function SidebarLayout({ children }: PropsWithChildren) {
         },
         {
             name: 'PPDB',
+            permission: 'view_ppdb',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
             ),
             submenu: [
-                { name: 'Pendaftaran', route: 'ppdb.pendaftaran.index' },
-                { name: 'Calon Siswa', route: 'ppdb.calon' },
-                { name: 'Seleksi', route: 'ppdb.seleksi' },
-                { name: 'Pembayaran', route: 'ppdb.pembayaran' },
-                { name: 'Pengumuman', route: 'ppdb.pengumuman.index' },
+                { name: 'Pendaftaran', route: 'ppdb.pendaftaran.index', permission: 'manage_ppdb_pendaftaran' },
+                { name: 'Calon Siswa', route: 'ppdb.calon', permission: 'view_ppdb' },
+                { name: 'Seleksi', route: 'ppdb.seleksi', permission: 'manage_ppdb_seleksi' },
+                { name: 'Pembayaran', route: 'ppdb.pembayaran', permission: 'manage_ppdb_pembayaran' },
+                { name: 'Pengumuman', route: 'ppdb.pengumuman.index', permission: 'manage_ppdb_pengumuman' },
             ],
         },
         {
             name: 'Master Data',
+            permission: 'view_master_data',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
                 </svg>
             ),
             submenu: [
-                { name: 'Tahun Ajaran', route: 'master.tahun-ajaran.index' },
-                { name: 'Jenjang', route: 'master.jenjang.index' },
-                { name: 'Jurusan', route: 'master.jurusan.index' },
-                { name: 'Kelas', route: 'master.kelas.index' },
-                { name: 'Mata Pelajaran', route: 'master.mata-pelajaran.index' },
+                { name: 'Tahun Ajaran', route: 'master.tahun-ajaran.index', permission: 'manage_tahun_ajaran' },
+                { name: 'Jenjang', route: 'master.jenjang.index', permission: 'manage_jenjang' },
+                { name: 'Jurusan', route: 'master.jurusan.index', permission: 'manage_jurusan' },
+                { name: 'Kelas', route: 'master.kelas.index', permission: 'manage_kelas' },
+                { name: 'Mata Pelajaran', route: 'master.mata-pelajaran.index', permission: 'manage_mata_pelajaran' },
             ],
         },
         {
             name: 'Akademik',
+            permission: 'view_akademik',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
             ),
             submenu: [
-                { name: 'Data Siswa', route: 'akademik.siswa.index' },
-                { name: 'Data Guru', route: 'akademik.guru.index' },
-                { name: 'Jadwal Pelajaran', route: 'akademik.jadwal.index' },
-                { name: 'Penilaian', route: 'akademik.nilai' },
-                { name: 'Raport', route: 'akademik.raport' },
+                { name: 'Data Siswa', route: 'akademik.siswa.index', permission: 'view_siswa' },
+                { name: 'Data Guru', route: 'akademik.guru.index', permission: 'view_guru' },
+                { name: 'Jadwal Pelajaran', route: 'akademik.jadwal.index', permission: 'view_jadwal_pelajaran' },
+                { name: 'Penilaian', route: 'akademik.nilai', permission: 'view_nilai' },
+                { name: 'Raport', route: 'akademik.raport', permission: 'view_raport' },
             ],
         },
         {
             name: 'Ujian',
+            permission: 'view_ujian',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -85,35 +107,37 @@ export default function SidebarLayout({ children }: PropsWithChildren) {
             ),
             submenu: [
                 { name: 'Ujian Saya', route: 'siswa.ujian.index' },
-                { name: 'Data Ujian', route: 'ujian.index' },
-                { name: 'Jadwal Ujian', route: 'ujian.jadwal' },
+                { name: 'Data Ujian', route: 'ujian.index', permission: 'view_ujian' },
+                { name: 'Jadwal Ujian', route: 'ujian.jadwal', permission: 'view_ujian' },
             ],
         },
         {
             name: 'Presensi',
+            permission: 'view_presensi',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
             ),
             submenu: [
-                { name: 'Presensi Siswa', route: 'presensi.siswa.index' },
-                { name: 'Presensi Guru', route: 'presensi.guru.index' },
-                { name: 'Rekap Presensi', route: 'presensi.rekap' },
+                { name: 'Presensi Siswa', route: 'presensi.siswa.index', permission: 'input_presensi_siswa' },
+                { name: 'Presensi Guru', route: 'presensi.guru.index', permission: 'input_presensi_guru' },
+                { name: 'Rekap Presensi', route: 'presensi.rekap', permission: 'view_rekap_presensi' },
             ],
         },
         {
             name: 'Keuangan',
+            permission: 'view_keuangan',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             ),
             submenu: [
-                { name: 'Tagihan SPP', route: 'keuangan.tagihan.index' },
-                { name: 'Pembayaran', route: 'keuangan.pembayaran.index' },
-                { name: 'Laporan Kas', route: 'keuangan.laporan' },
-                { name: 'Tunggakan', route: 'keuangan.tunggakan' },
+                { name: 'Tagihan SPP', route: 'keuangan.tagihan.index', permission: 'view_tagihan' },
+                { name: 'Pembayaran', route: 'keuangan.pembayaran.index', permission: 'manage_pembayaran' },
+                { name: 'Laporan Kas', route: 'keuangan.laporan', permission: 'view_laporan_keuangan' },
+                { name: 'Tunggakan', route: 'keuangan.tunggakan', permission: 'view_keuangan' },
             ],
         },
         {
@@ -126,35 +150,37 @@ export default function SidebarLayout({ children }: PropsWithChildren) {
             submenu: [
                 { name: 'Data Wali Murid', route: 'orangtua.data' },
                 { name: 'Akun Orang Tua', route: 'orangtua.akun' },
-                { name: 'Komunikasi', route: 'orangtua.komunikasi' },
+                { name: 'Komunikasi', route: 'orangtua.komunikasi', permission: 'view_komunikasi' },
             ],
         },
         {
             name: 'Administrasi',
+            permission: 'view_arsip',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
             ),
             submenu: [
-                { name: 'Surat Masuk', route: 'admin.surat-masuk' },
-                { name: 'Surat Keluar', route: 'admin.surat-keluar' },
-                { name: 'Arsip Digital', route: 'admin.arsip' },
+                { name: 'Surat Masuk', route: 'admin.surat-masuk', permission: 'manage_surat' },
+                { name: 'Surat Keluar', route: 'admin.surat-keluar', permission: 'manage_surat' },
+                { name: 'Arsip Digital', route: 'admin.arsip', permission: 'view_arsip' },
                 { name: 'Laporan', route: 'admin.laporan' },
             ],
         },
         {
             name: 'User Management',
+            permission: 'view_users',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
             ),
             submenu: [
-                { name: 'Daftar User', route: 'users.index' },
-                { name: 'Tambah User', route: 'users.create' },
-                { name: 'Kelola Role', route: 'roles.index' },
-                { name: 'Kelola Permission', route: 'users.permissions' },
+                { name: 'Daftar User', route: 'users.index', permission: 'view_users' },
+                { name: 'Tambah User', route: 'users.create', permission: 'create_user' },
+                { name: 'Kelola Role', route: 'roles.index', permission: 'view_roles' },
+                { name: 'Kelola Permission', route: 'users.permissions', permission: 'manage_permissions' },
             ],
         },
         {
@@ -166,7 +192,7 @@ export default function SidebarLayout({ children }: PropsWithChildren) {
             ),
             submenu: [
                 { name: 'Hafalan Quran', route: 'pesantren.hafalan.index' },
-                { name: 'Asrama', route: 'pesantren.asrama.index' },
+                { name: 'Asrama', route: 'pesantren.asrama.index', permission: 'view_asrama' },
                 { name: 'Akhlak', route: 'pesantren.akhlak.index' },
                 { name: 'Izin Pulang', route: 'pesantren.izin-pulang.index' },
             ],
@@ -200,6 +226,7 @@ export default function SidebarLayout({ children }: PropsWithChildren) {
         {
             name: 'Pengaturan',
             route: 'settings',
+            permission: 'view_settings',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -208,6 +235,17 @@ export default function SidebarLayout({ children }: PropsWithChildren) {
             ),
         },
     ];
+
+    // Filter menu items based on permissions
+    const filteredMenuItems = menuItems.filter(item => hasPermission(item.permission)).map(item => {
+        if (item.submenu) {
+            return {
+                ...item,
+                submenu: item.submenu.filter(subitem => hasPermission(subitem.permission))
+            };
+        }
+        return item;
+    }).filter(item => !item.submenu || item.submenu.length > 0); // Remove empty submenus
 
     const toggleSubmenu = (menuName: string) => {
         setOpenMenu(openMenu === menuName ? null : menuName);
@@ -252,7 +290,7 @@ export default function SidebarLayout({ children }: PropsWithChildren) {
 
                 {/* Navigation */}
                 <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
-                    {menuItems.map((item) => (
+                    {filteredMenuItems.map((item) => (
                         <div key={item.name}>
                             {item.submenu ? (
                                 <>

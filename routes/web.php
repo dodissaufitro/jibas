@@ -73,7 +73,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Master Data Routes
-    Route::prefix('master')->name('master.')->group(function () {
+    Route::prefix('master')->name('master.')->middleware('permission:view_master_data')->group(function () {
         Route::resource('tahun-ajaran', TahunAjaranController::class);
         Route::resource('jenjang', JenjangController::class);
         Route::resource('jurusan', JurusanController::class);
@@ -82,7 +82,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // PPDB Routes
-    Route::prefix('ppdb')->name('ppdb.')->group(function () {
+    Route::prefix('ppdb')->name('ppdb.')->middleware('permission:view_ppdb')->group(function () {
         Route::resource('pendaftaran', PpdbPendaftaranController::class);
         Route::get('/calon', [PpdbPendaftaranController::class, 'calon'])->name('calon');
         Route::get('/seleksi', [PpdbPendaftaranController::class, 'seleksi'])->name('seleksi');
@@ -93,7 +93,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // Akademik Routes
-    Route::prefix('akademik')->name('akademik.')->group(function () {
+    Route::prefix('akademik')->name('akademik.')->middleware('permission:view_akademik')->group(function () {
         Route::resource('siswa', SiswaController::class);
         Route::resource('guru', GuruController::class);
         Route::resource('jadwal', JadwalPelajaranController::class);
@@ -102,10 +102,12 @@ Route::middleware('auth')->group(function () {
     });
 
     // Ujian Routes
-    Route::resource('ujian', UjianController::class);
+    Route::middleware('permission:view_ujian')->group(function () {
+        Route::resource('ujian', UjianController::class);
+    });
 
     // Jadwal Ujian (calendar view)
-    Route::get('ujian-jadwal', [UjianController::class, 'jadwal'])->name('ujian.jadwal');
+    Route::get('ujian-jadwal', [UjianController::class, 'jadwal'])->middleware('permission:view_ujian')->name('ujian.jadwal');
 
     // Soal Ujian Routes (nested resource)
     Route::prefix('ujian/{ujian}/soal')->name('ujian.soal.')->group(function () {
@@ -129,14 +131,14 @@ Route::middleware('auth')->group(function () {
     });
 
     // Presensi Routes
-    Route::prefix('presensi')->name('presensi.')->group(function () {
+    Route::prefix('presensi')->name('presensi.')->middleware('permission:view_presensi')->group(function () {
         Route::resource('siswa', PresensiSiswaController::class);
         Route::resource('guru', PresensiGuruController::class);
         Route::get('/rekap', fn() => Inertia::render('ComingSoon', ['module' => 'Presensi - Rekap']))->name('rekap');
     });
 
     // Keuangan Routes
-    Route::prefix('keuangan')->name('keuangan.')->group(function () {
+    Route::prefix('keuangan')->name('keuangan.')->middleware('permission:view_keuangan')->group(function () {
         Route::resource('tagihan', TagihanController::class);
         Route::resource('pembayaran', PembayaranController::class);
         Route::get('/laporan', fn() => Inertia::render('ComingSoon', ['module' => 'Keuangan - Laporan Kas']))->name('laporan');
@@ -159,21 +161,23 @@ Route::middleware('auth')->group(function () {
     });
 
     // User Management Routes
-    Route::prefix('users')->name('users.')->group(function () {
-        Route::get('/', [UserController::class, 'index'])->name('index');
-        Route::get('/create', [UserController::class, 'create'])->name('create');
-        Route::post('/', [UserController::class, 'store'])->name('store');
-        Route::get('/{id}/edit', [UserController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [UserController::class, 'update'])->name('update');
-        Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
+    Route::middleware('permission:view_users')->group(function () {
+        Route::prefix('users')->name('users.')->group(function () {
+            Route::get('/', [UserController::class, 'index'])->name('index');
+            Route::get('/create', [UserController::class, 'create'])->name('create');
+            Route::post('/', [UserController::class, 'store'])->name('store');
+            Route::get('/{id}/edit', [UserController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [UserController::class, 'update'])->name('update');
+            Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
 
-        // Permission Management
-        Route::get('/permissions', [UserController::class, 'permissions'])->name('permissions');
-        Route::put('/roles/{roleId}/permissions', [UserController::class, 'updateRolePermissions'])->name('roles.permissions.update');
+            // Permission Management
+            Route::get('/permissions', [UserController::class, 'permissions'])->name('permissions');
+            Route::put('/roles/{roleId}/permissions', [UserController::class, 'updateRolePermissions'])->name('roles.permissions.update');
+        });
+
+        // Role Management Routes
+        Route::resource('roles', \App\Http\Controllers\RoleController::class);
     });
-
-    // Role Management Routes
-    Route::resource('roles', \App\Http\Controllers\RoleController::class);
 
     // Pesantren Routes (Institution-Specific)
     Route::prefix('pesantren')->name('pesantren.')->group(function () {
