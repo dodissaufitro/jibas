@@ -172,6 +172,9 @@ Route::middleware('auth')->group(function () {
         Route::put('/roles/{roleId}/permissions', [UserController::class, 'updateRolePermissions'])->name('roles.permissions.update');
     });
 
+    // Role Management Routes
+    Route::resource('roles', \App\Http\Controllers\RoleController::class);
+
     // Pesantren Routes (Institution-Specific)
     Route::prefix('pesantren')->name('pesantren.')->group(function () {
         Route::resource('hafalan', HafalanController::class);

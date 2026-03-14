@@ -153,6 +153,7 @@ export default function SidebarLayout({ children }: PropsWithChildren) {
             submenu: [
                 { name: 'Daftar User', route: 'users.index' },
                 { name: 'Tambah User', route: 'users.create' },
+                { name: 'Kelola Role', route: 'roles.index' },
                 { name: 'Kelola Permission', route: 'users.permissions' },
             ],
         },
