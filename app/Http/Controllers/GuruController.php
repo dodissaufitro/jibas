@@ -3,17 +3,37 @@
 namespace App\Http\Controllers;
 
 use App\Models\Guru;
+use App\Models\Institution;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class GuruController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $guru = Guru::orderBy('nama_lengkap')->paginate(15);
+        $query = Guru::with('institution')->orderBy('nama_lengkap');
+
+        // Auto-filter by logged-in user's institution
+        $user = Auth::user();
+        $userInstitutionId = $user ? $user->institution_id : null;
+
+        // If user has institution, auto-filter by it (unless manually filtering by another institution)
+        if ($userInstitutionId && !$request->has('institution_id')) {
+            $query->where('institution_id', $userInstitutionId);
+        } elseif ($request->has('institution_id') && $request->institution_id != '') {
+            // Manual filter by institution (for super admin)
+            $query->where('institution_id', $request->institution_id);
+        }
+
+        $guru = $query->paginate(15)->withQueryString();
+        $institutions = Institution::select('id', 'name')->where('is_active', true)->orderBy('name')->get();
 
         return Inertia::render('Akademik/Guru/Index', [
-            'guru' => $guru
+            'guru' => $guru,
+            'institutions' => $institutions,
+            'filters' => $request->only(['institution_id']),
+            'userInstitutionId' => $userInstitutionId,
         ]);
     }
 

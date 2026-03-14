@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
 
@@ -12,6 +12,11 @@ interface Guru {
     status: string;
 }
 
+interface Institution {
+    id: number;
+    name: string;
+}
+
 interface Props {
     guru: {
         data: Guru[];
@@ -21,9 +26,18 @@ interface Props {
         per_page: number;
         total: number;
     };
+    institutions: Institution[];
+    filters: {
+        institution_id?: string;
+    };
 }
 
-export default function Index({ guru }: Props) {
+export default function Index({ guru, institutions, filters }: Props) {
+    const [institutionId, setInstitutionId] = useState(filters.institution_id || '');
+
+    const handleFilter = () => {
+        router.get(route('akademik.guru.index'), { institution_id: institutionId }, { preserveState: true });
+    };
     const handleDelete = (id: number, nama: string) => {
         if (confirm(`Apakah Anda yakin ingin menghapus data guru "${nama}"?`)) {
             router.delete(route('akademik.guru.destroy', id));
@@ -62,19 +76,59 @@ export default function Index({ guru }: Props) {
         <SidebarLayout>
             <Head title="Data Guru" />
 
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="font-semibold text-2xl text-gray-800">
-                    Data Guru
-                </h2>
-                <Link
-                    href={route('akademik.guru.create')}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-                >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Tambah Guru
-                </Link>
+            <div className="mb-6">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="font-semibold text-2xl text-gray-800">
+                        Data Guru
+                    </h2>
+                    <Link
+                        href={route('akademik.guru.create')}
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Tambah Guru
+                    </Link>
+                </div>
+
+                {/* Filters */}
+                <div className="flex gap-4 items-end">
+                    <div className="flex-1 max-w-xs">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            🏫 Filter Institusi
+                        </label>
+                        <select
+                            value={institutionId}
+                            onChange={(e) => setInstitutionId(e.target.value)}
+                            className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="">Semua Institusi</option>
+                            {institutions.map((inst) => (
+                                <option key={inst.id} value={inst.id}>
+                                    {inst.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <button
+                        onClick={handleFilter}
+                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                    >
+                        Filter
+                    </button>
+                    {institutionId && (
+                        <button
+                            onClick={() => {
+                                setInstitutionId('');
+                                router.get(route('akademik.guru.index'));
+                            }}
+                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition-colors"
+                        >
+                            Reset
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="py-6">

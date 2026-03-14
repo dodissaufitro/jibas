@@ -108,15 +108,26 @@ export default function Index({ presensi, filters }: Props) {
                                     Monitor kehadiran siswa secara real-time dengan sistem presensi digital yang akurat dan efisien.
                                 </p>
                             </div>
-                            <Link
-                                href={route('presensi.siswa.create')}
-                                className="inline-flex items-center justify-center rounded-xl border border-teal-200/40 bg-white/15 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/20"
-                            >
-                                <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                </svg>
-                                Tambah Presensi
-                            </Link>
+                            <div className="flex flex-col gap-2 sm:flex-row">
+                                <Link
+                                    href={route('presensi.siswa.ambil-absen')}
+                                    className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-yellow-400 to-orange-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl"
+                                >
+                                    <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                    </svg>
+                                    Ambil Absen
+                                </Link>
+                                <Link
+                                    href={route('presensi.siswa.create')}
+                                    className="inline-flex items-center justify-center rounded-xl border border-teal-200/40 bg-white/15 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/20"
+                                >
+                                    <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Tambah Manual
+                                </Link>
+                            </div>
                         </div>
                     </div>
 

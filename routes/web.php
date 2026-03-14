@@ -8,12 +8,14 @@ use App\Http\Controllers\JurusanController;
 use App\Http\Controllers\KelasController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MataPelajaranController;
+use App\Http\Controllers\OrangTuaController;
 use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\PpdbPendaftaranController;
 use App\Http\Controllers\PpdbPengumumanController;
 use App\Http\Controllers\PresensiGuruController;
 use App\Http\Controllers\PresensiSiswaController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RekapPresensiSiswaController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\SoalUjianController;
 use App\Http\Controllers\TagihanController;
@@ -132,9 +134,15 @@ Route::middleware('auth')->group(function () {
 
     // Presensi Routes
     Route::prefix('presensi')->name('presensi.')->middleware('permission:view_presensi')->group(function () {
+        Route::get('siswa/ambil-absen', [PresensiSiswaController::class, 'ambilAbsen'])->name('siswa.ambil-absen');
+        Route::post('siswa/ambil-absen', [PresensiSiswaController::class, 'storeAmbilAbsen'])->name('siswa.store-absen');
         Route::resource('siswa', PresensiSiswaController::class);
         Route::resource('guru', PresensiGuruController::class);
-        Route::get('/rekap', fn() => Inertia::render('ComingSoon', ['module' => 'Presensi - Rekap']))->name('rekap');
+        
+        // Rekap Presensi Routes
+        Route::get('/rekap', [RekapPresensiSiswaController::class, 'index'])->name('rekap');
+        Route::post('/rekap/generate', [RekapPresensiSiswaController::class, 'generate'])->name('rekap.generate');
+        Route::get('/rekap/{siswaId}', [RekapPresensiSiswaController::class, 'show'])->name('rekap.show');
     });
 
     // Keuangan Routes
@@ -146,10 +154,17 @@ Route::middleware('auth')->group(function () {
     });
 
     // Orang Tua Routes
-    Route::prefix('orangtua')->group(function () {
-        Route::get('/data', fn() => Inertia::render('ComingSoon', ['module' => 'Orang Tua - Data Wali Murid']))->name('orangtua.data');
-        Route::get('/akun', fn() => Inertia::render('ComingSoon', ['module' => 'Orang Tua - Akun']))->name('orangtua.akun');
-        Route::get('/komunikasi', fn() => Inertia::render('ComingSoon', ['module' => 'Orang Tua - Komunikasi']))->name('orangtua.komunikasi');
+    Route::prefix('orangtua')->name('orangtua.')->group(function () {
+        Route::get('/data', [OrangTuaController::class, 'index'])->name('data');
+        Route::get('/create', [OrangTuaController::class, 'create'])->name('create');
+        Route::post('/', [OrangTuaController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [OrangTuaController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [OrangTuaController::class, 'update'])->name('update');
+        Route::delete('/{id}', [OrangTuaController::class, 'destroy'])->name('destroy');
+
+        // Coming Soon Routes
+        Route::get('/akun', fn() => Inertia::render('ComingSoon', ['module' => 'Orang Tua - Akun']))->name('akun');
+        Route::get('/komunikasi', fn() => Inertia::render('ComingSoon', ['module' => 'Orang Tua - Komunikasi']))->name('komunikasi');
     });
 
     // Administrasi Routes

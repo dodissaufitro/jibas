@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
 
@@ -6,7 +6,20 @@ interface Jenjang {
     nama: string;
 }
 
+interface Jurusan {
+    nama: string;
+}
+
 interface Kelas {
+    id: number;
+    nama: string;
+    nama_kelas: string;
+    tingkat: number;
+    jenjang: Jenjang;
+    jurusan?: Jurusan;
+}
+
+interface SiswaKelas {
     nama: string;
     jenjang: Jenjang;
 }
@@ -17,8 +30,13 @@ interface Siswa {
     nisn: string;
     nama_lengkap: string;
     jenis_kelamin: string;
-    kelas: Kelas;
+    kelas: SiswaKelas;
     status: 'aktif' | 'lulus' | 'pindah' | 'keluar';
+}
+
+interface Institution {
+    id: number;
+    name: string;
 }
 
 interface Props {
@@ -30,9 +48,24 @@ interface Props {
         per_page: number;
         total: number;
     };
+    kelasList: Kelas[];
+    institutions: Institution[];
+    filters: {
+        kelas_id?: string;
+        institution_id?: string;
+    };
 }
 
-export default function Index({ siswa }: Props) {
+export default function Index({ siswa, kelasList, institutions, filters }: Props) {
+    const [kelasId, setKelasId] = useState(filters.kelas_id || '');
+    const [institutionId, setInstitutionId] = useState(filters.institution_id || '');
+
+    const handleFilter = () => {
+        router.get(route('akademik.siswa.index'), { 
+            kelas_id: kelasId, 
+            institution_id: institutionId 
+        }, { preserveState: true });
+    };
     const handleDelete = (id: number, nama: string) => {
         if (confirm(`Apakah Anda yakin ingin menghapus siswa "${nama}"?`)) {
             router.delete(route('akademik.siswa.destroy', id));
@@ -53,19 +86,77 @@ export default function Index({ siswa }: Props) {
         <SidebarLayout>
             <Head title="Data Siswa" />
 
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="font-semibold text-2xl text-gray-800">
-                    Data Siswa
-                </h2>
-                <Link
-                    href={route('akademik.siswa.create')}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-                >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Tambah Siswa
-                </Link>
+            <div className="mb-6">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="font-semibold text-2xl text-gray-800">
+                        Data Siswa
+                    </h2>
+                    <Link
+                        href={route('akademik.siswa.create')}
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Tambah Siswa
+                    </Link>
+                </div>
+
+                {/* Filters */}
+                <div className="flex gap-4 items-end">
+                    <div className="flex-1 max-w-xs">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            🎓 Filter Kelas
+                        </label>
+                        <select
+                            value={kelasId}
+                            onChange={(e) => setKelasId(e.target.value)}
+                            className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="">Semua Kelas</option>
+                            {kelasList.map((kelas) => (
+                                <option key={kelas.id} value={kelas.id}>
+                                    {kelas.jenjang.nama} {kelas.nama_kelas}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="flex-1 max-w-xs">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            🏫 Filter Institusi
+                        </label>
+                        <select
+                            value={institutionId}
+                            onChange={(e) => setInstitutionId(e.target.value)}
+                            className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="">Semua Institusi</option>
+                            {institutions.map((inst) => (
+                                <option key={inst.id} value={inst.id}>
+                                    {inst.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <button
+                        onClick={handleFilter}
+                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                    >
+                        Filter
+                    </button>
+                    {(kelasId || institutionId) && (
+                        <button
+                            onClick={() => {
+                                setKelasId('');
+                                setInstitutionId('');
+                                router.get(route('akademik.siswa.index'));
+                            }}
+                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition-colors"
+                        >
+                            Reset
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="py-6">

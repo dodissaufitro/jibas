@@ -59,6 +59,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the guru profile associated with the user
+     */
+    public function guru()
+    {
+        return $this->hasOne(Guru::class);
+    }
+
+    /**
      * Get the roles that belong to the user.
      */
     public function roles()

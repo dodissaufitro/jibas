@@ -57,11 +57,27 @@ class InstitutionSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        $this->command->info('✅ 3 Contoh institusi berhasil dibuat!');
+        // Contoh Institusi 4: SMP A
+        $smpA = Institution::create([
+            'name' => 'SMP A',
+            'type' => 'umum',
+            'education_level' => 'SMP',
+            'address' => 'Jl. Pendidikan Raya No. 100, Jakarta Selatan',
+            'phone' => '021-11223344',
+            'email' => 'admin@smpa.sch.id',
+            'website' => 'https://smpa.sch.id',
+            'npsn' => '20456789',
+            'vision' => 'Menjadi sekolah unggulan dengan prestasi gemilang',
+            'mission' => 'Membentuk siswa berprestasi, berkarakter, dan berwawasan global',
+            'is_active' => true,
+        ]);
+
+        $this->command->info('✅ 4 Contoh institusi berhasil dibuat!');
         $this->command->newLine();
         $this->command->line('1. ' . $pesantren->name . ' (ID: ' . $pesantren->id . ')');
         $this->command->line('2. ' . $sekolah->name . ' (ID: ' . $sekolah->id . ')');
         $this->command->line('3. ' . $madrasah->name . ' (ID: ' . $madrasah->id . ')');
+        $this->command->line('4. ' . $smpA->name . ' (ID: ' . $smpA->id . ')');
         $this->command->newLine();
         $this->command->warn('💡 Tip: Assign user ke institusi dengan:');
         $this->command->line('   User::find(1)->update([\'institution_id\' => 1]);');

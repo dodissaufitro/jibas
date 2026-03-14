@@ -13,6 +13,7 @@ class Siswa extends Model
 
     protected $fillable = [
         'user_id',
+        'institution_id',
         'nis',
         'nisn',
         'nik',
@@ -42,6 +43,11 @@ class Siswa extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function institution(): BelongsTo
+    {
+        return $this->belongsTo(Institution::class);
     }
 
     public function kelas(): BelongsTo

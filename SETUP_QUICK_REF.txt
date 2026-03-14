@@ -1,0 +1,135 @@
+╔════════════════════════════════════════════════════════════════╗
+║            JIBAS - Quick Database Setup Reference              ║
+╚════════════════════════════════════════════════════════════════╝
+
+🚀 QUICK START - Pilih salah satu:
+
+┌──────────────────────────────────────────────────────────────┐
+│ 1. ARTISAN COMMAND (Recommended)                             │
+└──────────────────────────────────────────────────────────────┘
+   php artisan jibas:setup --fresh
+
+┌──────────────────────────────────────────────────────────────┐
+│ 2. LARAVEL STANDARD                                          │
+└──────────────────────────────────────────────────────────────┘
+   php artisan migrate:fresh --seed
+
+┌──────────────────────────────────────────────────────────────┐
+│ 3. BASH SCRIPT (Linux/Mac)                                   │
+└──────────────────────────────────────────────────────────────┘
+   chmod +x setup-database.sh
+   ./setup-database.sh
+
+┌──────────────────────────────────────────────────────────────┐
+│ 4. BATCH SCRIPT (Windows)                                    │
+└──────────────────────────────────────────────────────────────┘
+   setup-database.bat
+
+
+═══════════════════════════════════════════════════════════════
+
+📋 ARTISAN COMMAND OPTIONS:
+
+  php artisan jibas:setup --fresh
+    → Reset database dan seed semua data (⚠️ HAPUS SEMUA DATA)
+
+  php artisan jibas:setup --seed-only
+    → Hanya seed data tanpa migration
+
+  php artisan jibas:setup --fresh --no-cache
+    → Setup tanpa optimize cache
+
+  php artisan jibas:setup --help
+    → Lihat help command
+
+
+═══════════════════════════════════════════════════════════════
+
+📁 FILES TERSEDIA:
+
+  ├─ setup-database.sh       → Bash script (Linux/Mac server)
+  ├─ setup-database.bat      → Batch script (Windows)
+  ├─ DATABASE_SETUP.md       → Dokumentasi lengkap
+  └─ SETUP_QUICK_REF.txt     → File ini
+
+
+═══════════════════════════════════════════════════════════════
+
+👥 DEFAULT ACCOUNTS (setelah setup):
+
+  ┌────────────────┬──────────────────────────┬──────────────┐
+  │ Role           │ Email                    │ Password     │
+  ├────────────────┼──────────────────────────┼──────────────┤
+  │ Super Admin    │ admin@jibas.com          │ password123  │
+  │ Guru (All)     │ guru@jibas.com           │ password123  │
+  │ Guru (1 Class) │ guru.kelas7a@jibas.com   │ password123  │
+  └────────────────┴──────────────────────────┴──────────────┘
+
+  ⚠️  GANTI PASSWORD DI PRODUCTION!
+
+
+═══════════════════════════════════════════════════════════════
+
+🔧 TROUBLESHOOTING:
+
+  Database connection error:
+    → Check .env file (DB_HOST, DB_DATABASE, dll)
+    → Test: php artisan tinker → DB::connection()->getPdo();
+
+  Class not found:
+    → composer dump-autoload
+    → php artisan cache:clear
+
+  Permission denied:
+    → chmod -R 755 storage bootstrap/cache
+    → chown -R www-data:www-data storage bootstrap/cache
+
+  Memory limit:
+    → php -d memory_limit=512M artisan migrate:fresh --seed
+
+
+═══════════════════════════════════════════════════════════════
+
+📊 DATA YANG DI-SEED:
+
+  ✓ 4 Institutions (SD, SMP, SMA, SMK)
+  ✓ Roles & Permissions complete
+  ✓ 10 Guru + 15 Siswa (sample data)
+  ✓ 64 Kelas
+  ✓ Guru-Kelas assignments
+  ✓ Jenis Pembayaran & Tagihan
+  ✓ Sample Presensi & Ujian
+  ✓ Asrama data
+
+
+═══════════════════════════════════════════════════════════════
+
+⚠️  IMPORTANT NOTES:
+
+  DEVELOPMENT:
+    ✓ Boleh run migrate:fresh kapan saja
+    ✓ Data akan di-reset setiap kali setup
+
+  PRODUCTION:
+    ⚠️  JANGAN run migrate:fresh (hapus semua data!)
+    ✓ Gunakan php artisan migrate (tanpa fresh)
+    ✓ Backup database sebelum migration
+    ✓ Test di staging dulu
+
+
+═══════════════════════════════════════════════════════════════
+
+📖 DOKUMENTASI LENGKAP:
+
+  Baca DATABASE_SETUP.md untuk:
+    • Penjelasan detail setiap metode
+    • Step-by-step deployment production
+    • Troubleshooting lengkap
+    • Best practices
+    • Backup & restore guide
+
+
+═══════════════════════════════════════════════════════════════
+
+Created: March 15, 2026
+Version: 1.0
