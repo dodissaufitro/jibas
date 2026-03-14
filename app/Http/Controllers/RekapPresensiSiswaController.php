@@ -25,7 +25,7 @@ class RekapPresensiSiswaController extends Controller
         // Auto-filter by guru's assigned kelas if user is a guru with specific kelas access
         $user = Auth::user();
         $kelasIds = [];
-        
+
         if ($user && $user->guru && $user->guru->kelas()->exists()) {
             $kelasIds = $user->guru->kelas()->pluck('kelas.id')->toArray();
         }
@@ -67,10 +67,10 @@ class RekapPresensiSiswaController extends Controller
 
         // Calculate persentase kehadiran
         $rekap = $rekap->map(function ($item) {
-            $persentase = $item->total_hari > 0 
-                ? round(($item->total_hadir / $item->total_hari) * 100, 1) 
+            $persentase = $item->total_hari > 0
+                ? round(($item->total_hadir / $item->total_hari) * 100, 1)
                 : 0;
-            
+
             return (object) array_merge((array) $item, [
                 'persentase_kehadiran' => $persentase,
             ]);

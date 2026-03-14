@@ -138,7 +138,7 @@ Route::middleware('auth')->group(function () {
         Route::post('siswa/ambil-absen', [PresensiSiswaController::class, 'storeAmbilAbsen'])->name('siswa.store-absen');
         Route::resource('siswa', PresensiSiswaController::class);
         Route::resource('guru', PresensiGuruController::class);
-        
+
         // Rekap Presensi Routes
         Route::get('/rekap', [RekapPresensiSiswaController::class, 'index'])->name('rekap');
         Route::post('/rekap/generate', [RekapPresensiSiswaController::class, 'generate'])->name('rekap.generate');
