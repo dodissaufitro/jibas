@@ -11,13 +11,20 @@ interface Stats {
     presensiHariIni: number;
 }
 
-export default function SchoolDashboard({ stats }: { stats: Stats }) {
+export default function SchoolDashboard({ stats = {
+    totalSiswa: 0,
+    totalGuru: 0,
+    totalKelas: 0,
+    ppdbAktif: 0,
+    tunggakan: 0,
+    presensiHariIni: 0,
+} }: { stats?: Stats }) {
     const { isConfigured } = useSettings();
     
     const statCards = [
         {
             title: 'Total Siswa',
-            value: stats.totalSiswa,
+            value: stats?.totalSiswa ?? 0,
             icon: '👨‍🎓',
             color: 'from-blue-500 to-blue-600',
             bgColor: 'bg-blue-50',
@@ -25,7 +32,7 @@ export default function SchoolDashboard({ stats }: { stats: Stats }) {
         },
         {
             title: 'Total Guru',
-            value: stats.totalGuru,
+            value: stats?.totalGuru ?? 0,
             icon: '👨‍🏫',
             color: 'from-green-500 to-green-600',
             bgColor: 'bg-green-50',
@@ -33,7 +40,7 @@ export default function SchoolDashboard({ stats }: { stats: Stats }) {
         },
         {
             title: 'Total Kelas',
-            value: stats.totalKelas,
+            value: stats?.totalKelas ?? 0,
             icon: '🏫',
             color: 'from-purple-500 to-purple-600',
             bgColor: 'bg-purple-50',
@@ -41,7 +48,7 @@ export default function SchoolDashboard({ stats }: { stats: Stats }) {
         },
         {
             title: 'PPDB Aktif',
-            value: stats.ppdbAktif,
+            value: stats?.ppdbAktif ?? 0,
             icon: '📝',
             color: 'from-orange-500 to-orange-600',
             bgColor: 'bg-orange-50',
@@ -49,7 +56,7 @@ export default function SchoolDashboard({ stats }: { stats: Stats }) {
         },
         {
             title: 'Tunggakan SPP',
-            value: `Rp ${stats.tunggakan.toLocaleString('id-ID')}`,
+            value: `Rp ${(stats?.tunggakan ?? 0).toLocaleString('id-ID')}`,
             icon: '💰',
             color: 'from-red-500 to-red-600',
             bgColor: 'bg-red-50',
@@ -57,7 +64,7 @@ export default function SchoolDashboard({ stats }: { stats: Stats }) {
         },
         {
             title: 'Presensi Hari Ini',
-            value: `${stats.presensiHariIni}%`,
+            value: `${stats?.presensiHariIni ?? 0}%`,
             icon: '✅',
             color: 'from-teal-500 to-teal-600',
             bgColor: 'bg-teal-50',
@@ -70,7 +77,7 @@ export default function SchoolDashboard({ stats }: { stats: Stats }) {
         { name: 'Presensi Siswa', icon: '✓', route: 'presensi.siswa.index', color: 'bg-green-500' },
         { name: 'Kelola PPDB', icon: '📋', route: 'ppdb.pendaftaran.index', color: 'bg-purple-500' },
         { name: 'Pembayaran', icon: '💳', route: 'keuangan.pembayaran.index', color: 'bg-orange-500' },
-        { name: 'Jadwal', icon: '📅', route: 'akademik.jadwal', color: 'bg-pink-500' },
+        { name: 'Jadwal', icon: '📅', route: 'akademik.jadwal.index', color: 'bg-pink-500' },
         { name: 'Laporan', icon: '📈', route: 'admin.laporan', color: 'bg-indigo-500' },
     ];
 

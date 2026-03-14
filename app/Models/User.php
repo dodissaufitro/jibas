@@ -45,6 +45,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'last_login_at' => 'datetime',
         ];
     }
 
@@ -54,5 +56,80 @@ class User extends Authenticatable
     public function institution(): BelongsTo
     {
         return $this->belongsTo(Institution::class);
+    }
+
+    /**
+     * Get the roles that belong to the user.
+     */
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'user_roles');
+    }
+
+    /**
+     * Get all permissions for the user through roles.
+     */
+    public function permissions()
+    {
+        return $this->hasManyThrough(
+            Permission::class,
+            Role::class,
+            'id',
+            'id',
+            'id',
+            'id'
+        )->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
+            ->join('role_permission', 'roles.id', '=', 'role_permission.role_id')
+            ->where('user_roles.user_id', $this->id);
+    }
+
+    /**
+     * Check if user has a specific role.
+     */
+    public function hasRole($role): bool
+    {
+        if (is_string($role)) {
+            return $this->roles->contains('name', $role);
+        }
+        return (bool) $role->intersect($this->roles)->count();
+    }
+
+    /**
+     * Check if user has a specific permission.
+     */
+    public function hasPermission($permission): bool
+    {
+        foreach ($this->roles as $role) {
+            if ($role->permissions->contains('name', $permission)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if user has any of the given permissions.
+     */
+    public function hasAnyPermission(array $permissions): bool
+    {
+        foreach ($permissions as $permission) {
+            if ($this->hasPermission($permission)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if user has all of the given permissions.
+     */
+    public function hasAllPermissions(array $permissions): bool
+    {
+        foreach ($permissions as $permission) {
+            if (!$this->hasPermission($permission)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\GuruController;
 use App\Http\Controllers\InstitutionController;
+use App\Http\Controllers\JadwalPelajaranController;
 use App\Http\Controllers\JenjangController;
 use App\Http\Controllers\JurusanController;
 use App\Http\Controllers\KelasController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\TagihanController;
 use App\Http\Controllers\TahunAjaranController;
 use App\Http\Controllers\UjianController;
 use App\Http\Controllers\UjianSiswaController;
+use App\Http\Controllers\UserController;
 use App\Modules\InstitutionSpecific\Pesantren\Hafalan\Controllers\HafalanController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -94,7 +96,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('akademik')->name('akademik.')->group(function () {
         Route::resource('siswa', SiswaController::class);
         Route::resource('guru', GuruController::class);
-        Route::get('/jadwal', fn() => Inertia::render('ComingSoon', ['module' => 'Akademik - Jadwal Pelajaran']))->name('jadwal');
+        Route::resource('jadwal', JadwalPelajaranController::class);
         Route::get('/nilai', fn() => Inertia::render('ComingSoon', ['module' => 'Akademik - Penilaian']))->name('nilai');
         Route::get('/raport', fn() => Inertia::render('ComingSoon', ['module' => 'Akademik - Raport']))->name('raport');
     });
@@ -154,6 +156,20 @@ Route::middleware('auth')->group(function () {
         Route::get('/surat-keluar', fn() => Inertia::render('ComingSoon', ['module' => 'Admin - Surat Keluar']))->name('admin.surat-keluar');
         Route::get('/arsip', fn() => Inertia::render('ComingSoon', ['module' => 'Admin - Arsip Digital']))->name('admin.arsip');
         Route::get('/laporan', fn() => Inertia::render('ComingSoon', ['module' => 'Admin - Laporan']))->name('admin.laporan');
+    });
+
+    // User Management Routes
+    Route::prefix('users')->name('users.')->group(function () {
+        Route::get('/', [UserController::class, 'index'])->name('index');
+        Route::get('/create', [UserController::class, 'create'])->name('create');
+        Route::post('/', [UserController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [UserController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [UserController::class, 'update'])->name('update');
+        Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
+
+        // Permission Management
+        Route::get('/permissions', [UserController::class, 'permissions'])->name('permissions');
+        Route::put('/roles/{roleId}/permissions', [UserController::class, 'updateRolePermissions'])->name('roles.permissions.update');
     });
 
     // Pesantren Routes (Institution-Specific)
