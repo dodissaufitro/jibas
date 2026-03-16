@@ -86,6 +86,18 @@ class DatabaseSeeder extends Seeder
         $this->command->info('📝 Seeding soal ujian...');
         $this->call(SoalUjianSeeder::class);
 
+        // 15. Seed Guru, Jadwal Pelajaran dan Ujian (sample data lengkap)
+        $this->command->info('👨‍🏫 Seeding guru, jadwal, dan ujian (sample)...');
+        $this->call(GuruJadwalUjianSeeder::class);
+
+        // 16. Seed Soal Ujian Matematika (15 soal tambahan)
+        $this->command->info('📝 Seeding soal ujian matematika...');
+        $this->call(SoalUjianMatematikaSeeder::class);
+
+        // 17. Seed Contoh Siswa dari berbagai jenjang (10 siswa)
+        $this->command->info('👨‍🎓 Seeding contoh siswa (SMP, SMA, SMK)...');
+        $this->call(ContohSiswaSeeder::class);
+
         $this->command->newLine();
         $this->command->info('✅ Database seeding completed successfully!');
         $this->command->newLine();
@@ -101,6 +113,9 @@ class DatabaseSeeder extends Seeder
                 ['Guru', \App\Models\Guru::count()],
                 ['Siswa', \App\Models\Siswa::count()],
                 ['Kelas', \App\Models\Kelas::count()],
+                ['Jadwal Pelajaran', \App\Models\JadwalPelajaran::count()],
+                ['Ujian', \App\Models\Ujian::count()],
+                ['Soal Ujian', \App\Models\SoalUjian::count()],
             ]
         );
     }
