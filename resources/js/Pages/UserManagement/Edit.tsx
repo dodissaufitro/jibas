@@ -17,6 +17,16 @@ interface Permission {
     module: string;
 }
 
+interface Kelas {
+    id: number;
+    nama_kelas: string;
+    tingkat: number;
+    jenjang?: {
+        id: number;
+        nama: string;
+    };
+}
+
 interface User {
     id: number;
     name: string;
@@ -24,15 +34,24 @@ interface User {
     phone?: string;
     address?: string;
     is_active: boolean;
+    siswa?: {
+        id: number;
+        kelas_id?: number;
+        kelas?: {
+            id: number;
+            nama_kelas: string;
+        };
+    };
 }
 
 interface Props {
     user: User;
     roles: Role[];
+    kelasList: Kelas[];
     userRoles: number[];
 }
 
-export default function Edit({ user, roles, userRoles }: Props) {
+export default function Edit({ user, roles, kelasList, userRoles }: Props) {
     const { data, setData, put, processing, errors } = useForm({
         name: user.name || '',
         email: user.email || '',
@@ -42,6 +61,7 @@ export default function Edit({ user, roles, userRoles }: Props) {
         address: user.address || '',
         is_active: user.is_active ?? true,
         roles: userRoles || [],
+        kelas_id: user.siswa?.kelas_id?.toString() || '',
     });
 
     const [selectedRoles, setSelectedRoles] = useState<Role[]>([]);
@@ -217,6 +237,31 @@ export default function Edit({ user, roles, userRoles }: Props) {
                             />
                             {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
                         </div>
+
+                        {/* Kelas - Only show if siswa role is selected */}
+                        {selectedRoles.some(role => role.name === 'siswa') && (
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    Kelas <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={data.kelas_id}
+                                    onChange={(e) => setData('kelas_id', e.target.value)}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                                >
+                                    <option value="">Pilih Kelas</option>
+                                    {kelasList && kelasList.map((kelas) => (
+                                        <option key={kelas.id} value={kelas.id}>
+                                            {kelas.nama_kelas} {kelas.jenjang && `- ${kelas.jenjang.nama}`}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.kelas_id && <p className="mt-1 text-sm text-red-600">{errors.kelas_id}</p>}
+                                <p className="mt-2 text-sm text-gray-500">
+                                    💡 Kelas harus dipilih untuk user dengan role siswa
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
 

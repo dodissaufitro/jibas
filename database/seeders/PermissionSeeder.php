@@ -70,6 +70,7 @@ class PermissionSeeder extends Seeder
                 'delete_ujian' => 'Hapus Ujian',
                 'manage_soal_ujian' => 'Kelola Soal Ujian',
                 'view_hasil_ujian' => 'Lihat Hasil Ujian',
+                'view_jadwal_ujian' => 'Lihat Jadwal Ujian',
             ],
             'keuangan' => [
                 'view_keuangan' => 'Lihat Data Keuangan',
@@ -200,8 +201,11 @@ class PermissionSeeder extends Seeder
             'input_presensi_siswa',
             'view_rekap_presensi',
             'view_ujian',
+            'create_ujian',
+            'edit_ujian',
             'manage_soal_ujian',
             'view_hasil_ujian',
+            'view_jadwal_ujian',
         ])->pluck('id');
         $guru->permissions()->sync($guruPermissions);
 
@@ -211,7 +215,7 @@ class PermissionSeeder extends Seeder
             'view_jadwal_pelajaran',
             'view_nilai',
             'view_raport',
-            'view_ujian',
+            'view_jadwal_ujian',
         ])->pluck('id');
         $siswa->permissions()->sync($siswaPermissions);
 

@@ -12,6 +12,7 @@ interface MenuItem {
 
 interface AuthProps {
     user: { name: string; email: string };
+    roles?: string[];
     permissions?: string[];
     isSuperAdmin?: boolean;
 }
@@ -20,6 +21,7 @@ export default function SidebarLayout({ children }: PropsWithChildren) {
     const page = usePage();
     const auth = page.props.auth as AuthProps | undefined;
     const user = auth?.user;
+    const roles = auth?.roles || [];
     const permissions = auth?.permissions || [];
     const isSuperAdmin = auth?.isSuperAdmin || false;
     const { settings } = useSettings();
@@ -36,6 +38,12 @@ export default function SidebarLayout({ children }: PropsWithChildren) {
         if (!permission) return true; // No permission required
         if (isSuperAdmin) return true; // Super admin has all permissions
         return permissions.includes(permission);
+    };
+
+    // Check if user has role
+    const hasRole = (role: string): boolean => {
+        if (isSuperAdmin) return true;
+        return roles.includes(role);
     };
 
     const menuItems: MenuItem[] = [
@@ -99,16 +107,15 @@ export default function SidebarLayout({ children }: PropsWithChildren) {
         },
         {
             name: 'Ujian',
-            permission: 'view_ujian',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
             ),
+            // No permission on parent - visibility determined by submenu
             submenu: [
-                { name: 'Ujian Saya', route: 'siswa.ujian.index' },
                 { name: 'Data Ujian', route: 'ujian.index', permission: 'view_ujian' },
-                { name: 'Jadwal Ujian', route: 'ujian.jadwal', permission: 'view_ujian' },
+                { name: 'Jadwal Ujian', route: 'ujian.jadwal', permission: 'view_jadwal_ujian' },
             ],
         },
         {
@@ -235,6 +242,29 @@ export default function SidebarLayout({ children }: PropsWithChildren) {
             ),
         },
     ];
+
+    // Dynamically add role-specific submenu items
+    const ujianMenuIndex = menuItems.findIndex(item => item.name === 'Ujian');
+    if (ujianMenuIndex !== -1) {
+        const ujianMenu = menuItems[ujianMenuIndex];
+        if (ujianMenu.submenu) {
+            // Add "Ujian Saya" as first submenu for siswa role (no permission check needed as route uses role:siswa middleware)
+            if (hasRole('siswa')) {
+                ujianMenu.submenu.unshift(
+                    { 
+                        name: 'Ujian Saya', 
+                        route: 'siswa.ujian.index'
+                        // No permission - accessible to all siswa
+                    },
+                    { 
+                        name: 'Jadwal Pelajaran', 
+                        route: 'siswa.exam.jadwal'
+                        // No permission - accessible to all siswa
+                    }
+                );
+            }
+        }
+    }
 
     // Filter menu items based on permissions
     const filteredMenuItems = menuItems.filter(item => hasPermission(item.permission)).map(item => {

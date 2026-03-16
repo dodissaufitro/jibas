@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'institution' => \App\Http\Middleware\CheckInstitutionType::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'role' => \App\Http\Middleware\CheckRole::class,
+            'kelas.access' => \App\Http\Middleware\CheckKelasAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Shared\Traits\KelasScoped;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ujian extends Model
 {
+    use KelasScoped; // Auto-filter berdasarkan kelas siswa
+
     protected $table = 'ujian';
 
     protected $fillable = [

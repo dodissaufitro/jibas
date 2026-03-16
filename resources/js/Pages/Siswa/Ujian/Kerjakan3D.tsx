@@ -51,12 +51,11 @@ interface Props {
     sisaWaktu: number;
 }
 
-export default function Kerjakan({ ujianSiswa, soal, jawaban, sisaWaktu: initialSisaWaktu }: Props) {
+export default function Kerjakan3D({ ujianSiswa, soal, jawaban, sisaWaktu: initialSisaWaktu }: Props) {
     const [selectedJawaban, setSelectedJawaban] = useState<{ [key: number]: string }>({});
     const [sisaWaktu, setSisaWaktu] = useState(initialSisaWaktu);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [hoveredQuestion, setHoveredQuestion] = useState<number | null>(null);
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
     // Load saved answers
     useEffect(() => {
@@ -113,22 +112,6 @@ export default function Kerjakan({ ujianSiswa, soal, jawaban, sisaWaktu: initial
             delete newAnswers[soalId];
             return newAnswers;
         });
-    };
-
-    const handleNextQuestion = () => {
-        if (currentQuestionIndex < soal.length - 1) {
-            setCurrentQuestionIndex(currentQuestionIndex + 1);
-        }
-    };
-
-    const handlePreviousQuestion = () => {
-        if (currentQuestionIndex > 0) {
-            setCurrentQuestionIndex(currentQuestionIndex - 1);
-        }
-    };
-
-    const goToQuestion = (index: number) => {
-        setCurrentQuestionIndex(index);
     };
 
     const handleSubmit = () => {
@@ -347,12 +330,9 @@ export default function Kerjakan({ ujianSiswa, soal, jawaban, sisaWaktu: initial
                         </div>
                     </div>
 
-                    {/* Question Display - Single Question at a Time */}
-                    {(() => {
-                        const item = soal[currentQuestionIndex];
-                        const index = currentQuestionIndex;
-                        
-                        return (
+                    {/* Questions */}
+                    <div className="space-y-8">
+                        {soal.map((item, index) => (
                             <div 
                                 key={item.id}
                                 onMouseEnter={() => setHoveredQuestion(item.id)}
@@ -482,75 +462,7 @@ export default function Kerjakan({ ujianSiswa, soal, jawaban, sisaWaktu: initial
                                     })}
                                 </div>
                             </div>
-                        );
-                    })()}
-
-                    {/* Navigation Buttons - Next/Previous */}
-                    <div className="mt-8 flex items-center justify-between gap-4">
-                        <button
-                            onClick={handlePreviousQuestion}
-                            disabled={currentQuestionIndex === 0}
-                            className={`flex items-center space-x-2 px-8 py-4 rounded-2xl font-bold text-lg shadow-xl transition-all duration-300 ${
-                                currentQuestionIndex === 0
-                                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:shadow-2xl transform hover:-translate-y-1 hover:scale-105'
-                            }`}
-                        >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-                            </svg>
-                            <span>Previous</span>
-                        </button>
-
-                        {/* Question Counter */}
-                        <div className="flex-1 text-center">
-                            <div className="inline-flex items-center space-x-2 px-6 py-3 bg-white/90 rounded-2xl shadow-lg border-2 border-purple-300">
-                                <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                                    {currentQuestionIndex + 1}
-                                </span>
-                                <span className="text-gray-500">/</span>
-                                <span className="text-lg text-gray-700">{soal.length}</span>
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={handleNextQuestion}
-                            disabled={currentQuestionIndex === soal.length - 1}
-                            className={`flex items-center space-x-2 px-8 py-4 rounded-2xl font-bold text-lg shadow-xl transition-all duration-300 ${
-                                currentQuestionIndex === soal.length - 1
-                                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:shadow-2xl transform hover:-translate-y-1 hover:scale-105'
-                            }`}
-                        >
-                            <span>Next</span>
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    {/* Mobile Navigation - Show on small screens */}
-                    <div className="mt-6 lg:hidden">
-                        <div className="glass-effect rounded-2xl shadow-xl p-4">
-                            <h4 className="text-sm font-bold text-gray-700 mb-3">Navigasi Soal</h4>
-                            <div className="grid grid-cols-5 gap-2">
-                                {soal.map((item, index) => (
-                                    <button
-                                        key={item.id}
-                                        onClick={() => goToQuestion(index)}
-                                        className={`w-10 h-10 rounded-lg font-semibold text-sm transition-all duration-300 ${
-                                            index === currentQuestionIndex
-                                                ? 'bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-lg ring-2 ring-purple-300 transform scale-105'
-                                                : selectedJawaban[item.id]
-                                                ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-md'
-                                                : 'bg-white text-gray-600 border-2 border-gray-200'
-                                        }`}
-                                    >
-                                        {index + 1}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                        ))}
                     </div>
 
                     {/* Submit Button dengan efek 3D */}
@@ -593,7 +505,7 @@ export default function Kerjakan({ ujianSiswa, soal, jawaban, sisaWaktu: initial
                         </button>
                     </div>
 
-                    {/* Question Navigation Panel - Direct Jump */}
+                    {/* Question Navigation (Mobile Friendly) */}
                     <div className="fixed bottom-6 right-6 z-50 lg:block hidden">
                         <div className="glass-effect rounded-2xl shadow-2xl p-4 max-h-96 overflow-y-auto">
                             <h4 className="text-sm font-bold text-gray-700 mb-3 px-2">Navigasi Soal</h4>
@@ -601,11 +513,11 @@ export default function Kerjakan({ ujianSiswa, soal, jawaban, sisaWaktu: initial
                                 {soal.map((item, index) => (
                                     <button
                                         key={item.id}
-                                        onClick={() => goToQuestion(index)}
+                                        onClick={() => {
+                                            document.getElementById(`soal-${item.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        }}
                                         className={`w-10 h-10 rounded-lg font-semibold text-sm transition-all duration-300 ${
-                                            index === currentQuestionIndex
-                                                ? 'bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-lg ring-4 ring-purple-300 transform scale-110'
-                                                : selectedJawaban[item.id]
+                                            selectedJawaban[item.id]
                                                 ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg transform hover:scale-110'
                                                 : 'bg-white text-gray-600 border-2 border-gray-200 hover:border-purple-400 hover:scale-105'
                                         }`}

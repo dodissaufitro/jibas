@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Permission;
+use App\Models\Kelas;
+use App\Models\Siswa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -18,7 +20,7 @@ class UserController extends Controller
             $search = $request->input('search');
             $roleFilter = $request->input('role');
 
-            $query = User::with(['roles', 'institution']);
+            $query = User::with(['roles', 'institution', 'siswa.kelas.jenjang']);
 
             if ($search) {
                 $query->where(function ($q) use ($search) {
@@ -36,10 +38,12 @@ class UserController extends Controller
 
             $users = $query->latest()->paginate(15);
             $roles = Role::all();
+            $kelasList = Kelas::with(['jenjang'])->orderBy('tingkat')->orderBy('nama_kelas')->get();
 
             return Inertia::render('UserManagement/Index', [
                 'users' => $users,
                 'roles' => $roles,
+                'kelasList' => $kelasList,
                 'filters' => [
                     'search' => $search,
                     'role' => $roleFilter,
@@ -54,9 +58,11 @@ class UserController extends Controller
     {
         try {
             $roles = Role::with('permissions')->get();
+            $kelasList = Kelas::with(['jenjang'])->orderBy('tingkat')->orderBy('nama_kelas')->get();
 
             return Inertia::render('UserManagement/Create', [
                 'roles' => $roles,
+                'kelasList' => $kelasList,
             ]);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -75,6 +81,7 @@ class UserController extends Controller
                 'is_active' => 'boolean',
                 'roles' => 'required|array|min:1',
                 'roles.*' => 'exists:roles,id',
+                'kelas_id' => 'nullable|exists:kelas,id',
             ]);
 
             $user = User::create([
@@ -90,6 +97,23 @@ class UserController extends Controller
             // Attach roles to user
             $user->roles()->sync($validated['roles']);
 
+            // Check if user has 'siswa' role
+            $roles = Role::whereIn('id', $validated['roles'])->pluck('name')->toArray();
+            if (in_array('siswa', $roles)) {
+                // Create siswa entry
+                Siswa::create([
+                    'user_id' => $user->id,
+                    'institution_id' => $user->institution_id,
+                    'nama_lengkap' => $user->name,
+                    'email' => $user->email,
+                    'no_hp' => $user->phone,
+                    'alamat' => $user->address,
+                    'kelas_id' => $validated['kelas_id'] ?? null,
+                    'status' => 'aktif',
+                    'tanggal_masuk' => now(),
+                ]);
+            }
+
             return redirect()->route('users.index')
                 ->with('success', 'User berhasil ditambahkan');
         } catch (\Exception $e) {
@@ -102,12 +126,14 @@ class UserController extends Controller
     public function edit($id)
     {
         try {
-            $user = User::with(['roles', 'institution'])->findOrFail($id);
+            $user = User::with(['roles', 'institution', 'siswa.kelas.jenjang'])->findOrFail($id);
             $roles = Role::with('permissions')->get();
+            $kelasList = Kelas::with(['jenjang'])->orderBy('tingkat')->orderBy('nama_kelas')->get();
 
             return Inertia::render('UserManagement/Edit', [
                 'user' => $user,
                 'roles' => $roles,
+                'kelasList' => $kelasList,
                 'userRoles' => $user->roles->pluck('id')->toArray(),
             ]);
         } catch (\Exception $e) {
@@ -129,6 +155,7 @@ class UserController extends Controller
                 'is_active' => 'boolean',
                 'roles' => 'required|array|min:1',
                 'roles.*' => 'exists:roles,id',
+                'kelas_id' => 'nullable|exists:kelas,id',
             ]);
 
             $user->update([
@@ -148,6 +175,37 @@ class UserController extends Controller
 
             // Sync roles
             $user->roles()->sync($validated['roles']);
+
+            // Check if user has 'siswa' role
+            $roles = Role::whereIn('id', $validated['roles'])->pluck('name')->toArray();
+            if (in_array('siswa', $roles)) {
+                // Check if siswa entry exists
+                $siswa = Siswa::where('user_id', $user->id)->first();
+
+                if ($siswa) {
+                    // Update existing siswa
+                    $siswa->update([
+                        'nama_lengkap' => $user->name,
+                        'email' => $user->email,
+                        'no_hp' => $user->phone,
+                        'alamat' => $user->address,
+                        'kelas_id' => $validated['kelas_id'] ?? $siswa->kelas_id,
+                    ]);
+                } else {
+                    // Create new siswa entry
+                    Siswa::create([
+                        'user_id' => $user->id,
+                        'institution_id' => $user->institution_id,
+                        'nama_lengkap' => $user->name,
+                        'email' => $user->email,
+                        'no_hp' => $user->phone,
+                        'alamat' => $user->address,
+                        'kelas_id' => $validated['kelas_id'] ?? null,
+                        'status' => 'aktif',
+                        'tanggal_masuk' => now(),
+                    ]);
+                }
+            }
 
             return redirect()->route('users.index')
                 ->with('success', 'User berhasil diperbarui');
@@ -208,6 +266,59 @@ class UserController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Gagal memperbarui: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Sync users with siswa role to siswa master data table
+     */
+    public function syncSiswaToMasterData()
+    {
+        try {
+            // Get siswa role
+            $siswaRole = Role::where('name', 'siswa')->first();
+
+            if (!$siswaRole) {
+                return redirect()->back()->with('error', 'Role siswa tidak ditemukan');
+            }
+
+            // Get all users with siswa role
+            $siswaUsers = User::whereHas('roles', function ($q) use ($siswaRole) {
+                $q->where('roles.id', $siswaRole->id);
+            })->get();
+
+            $synced = 0;
+            $skipped = 0;
+
+            foreach ($siswaUsers as $user) {
+                // Check if siswa entry already exists
+                $existingSiswa = Siswa::where('user_id', $user->id)->first();
+
+                if (!$existingSiswa) {
+                    // Create new siswa entry
+                    Siswa::create([
+                        'user_id' => $user->id,
+                        'institution_id' => $user->institution_id,
+                        'nama_lengkap' => $user->name,
+                        'email' => $user->email,
+                        'no_hp' => $user->phone,
+                        'alamat' => $user->address,
+                        'status' => 'aktif',
+                        'tanggal_masuk' => $user->created_at ?? now(),
+                    ]);
+                    $synced++;
+                } else {
+                    $skipped++;
+                }
+            }
+
+            return redirect()->back()->with(
+                'success',
+                "Sinkronisasi selesai! {$synced} siswa berhasil ditambahkan ke master data, {$skipped} sudah ada."
+            );
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Gagal sinkronisasi: ' . $e->getMessage());
         }
     }
 }

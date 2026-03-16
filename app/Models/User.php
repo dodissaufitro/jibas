@@ -67,6 +67,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the siswa profile associated with the user
+     */
+    public function siswa()
+    {
+        return $this->hasOne(Siswa::class);
+    }
+
+    /**
      * Get the roles that belong to the user.
      */
     public function roles()
@@ -139,5 +147,57 @@ class User extends Authenticatable
             }
         }
         return true;
+    }
+
+    /**
+     * Get the kelas_id of the siswa profile
+     */
+    public function getKelasId(): ?int
+    {
+        if ($this->hasRole('siswa') && $this->siswa) {
+            return $this->siswa->kelas_id;
+        }
+        return null;
+    }
+
+    /**
+     * Check if user is in a specific kelas
+     */
+    public function isInKelas(int $kelasId): bool
+    {
+        return $this->getKelasId() === $kelasId;
+    }
+
+    /**
+     * Check if user can access a kelas
+     */
+    public function canAccessKelas(int $kelasId): bool
+    {
+        // Super admin, admin, and guru can access all kelas
+        if ($this->hasRole(['super_admin', 'admin', 'guru'])) {
+            return true;
+        }
+
+        // Siswa can only access their own kelas
+        if ($this->hasRole('siswa')) {
+            return $this->isInKelas($kelasId);
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user is a classmate of another user
+     */
+    public function isClassmateOf(User $user): bool
+    {
+        if (!$this->hasRole('siswa') || !$user->hasRole('siswa')) {
+            return false;
+        }
+
+        $thisKelasId = $this->getKelasId();
+        $otherKelasId = $user->getKelasId();
+
+        return $thisKelasId && $otherKelasId && $thisKelasId === $otherKelasId;
     }
 }

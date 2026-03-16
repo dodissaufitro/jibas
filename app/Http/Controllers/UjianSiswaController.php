@@ -10,6 +10,7 @@ use App\Models\Siswa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
@@ -28,9 +29,18 @@ class UjianSiswaController extends Controller
                 ->with('error', 'Data siswa tidak ditemukan');
         }
 
-        // Ambil ujian yang tersedia untuk kelas siswa
+        // Get guru_ids and mata_pelajaran_ids yang mengajar di kelas siswa
+        $jadwalKelas = \App\Models\JadwalPelajaran::where('kelas_id', $siswa->kelas_id)
+            ->get();
+
+        $guruIds = $jadwalKelas->pluck('guru_id')->unique()->toArray();
+        $mapelIds = $jadwalKelas->pluck('mata_pelajaran_id')->unique()->toArray();
+
+        // Ambil ujian yang tersedia untuk kelas siswa, HANYA dari guru dan mapel di jadwal
         $ujian = Ujian::with(['mataPelajaran', 'guru', 'kelas'])
             ->where('kelas_id', $siswa->kelas_id)
+            ->whereIn('guru_id', $guruIds)
+            ->whereIn('mata_pelajaran_id', $mapelIds)
             ->whereIn('status', ['dijadwalkan', 'berlangsung'])
             ->orderBy('tanggal_ujian', 'asc')
             ->get()
@@ -71,9 +81,18 @@ class UjianSiswaController extends Controller
                 ->with('error', 'Data siswa tidak ditemukan');
         }
 
-        // Cari ujian berdasarkan ID
+        // Get guru_ids and mata_pelajaran_ids yang mengajar di kelas siswa
+        $jadwalKelas = \App\Models\JadwalPelajaran::where('kelas_id', $siswa->kelas_id)
+            ->get();
+
+        $guruIds = $jadwalKelas->pluck('guru_id')->unique()->toArray();
+        $mapelIds = $jadwalKelas->pluck('mata_pelajaran_id')->unique()->toArray();
+
+        // Cari ujian berdasarkan ID dengan filter jadwal
         $ujian = Ujian::where('id', $validated['kode_ujian'])
             ->where('kelas_id', $siswa->kelas_id)
+            ->whereIn('guru_id', $guruIds)
+            ->whereIn('mata_pelajaran_id', $mapelIds)
             ->whereIn('status', ['dijadwalkan', 'berlangsung'])
             ->first();
 
@@ -104,6 +123,18 @@ class UjianSiswaController extends Controller
         if ($ujian->kelas_id !== $siswa->kelas_id) {
             return redirect()->route('siswa.ujian.index')
                 ->with('error', 'Ujian ini bukan untuk kelas Anda');
+        }
+
+        // Validasi apakah ujian dari guru yang mengajar di kelas siswa
+        $jadwalKelas = \App\Models\JadwalPelajaran::where('kelas_id', $siswa->kelas_id)
+            ->get();
+
+        $guruIds = $jadwalKelas->pluck('guru_id')->unique()->toArray();
+        $mapelIds = $jadwalKelas->pluck('mata_pelajaran_id')->unique()->toArray();
+
+        if (!in_array($ujian->guru_id, $guruIds) || !in_array($ujian->mata_pelajaran_id, $mapelIds)) {
+            return redirect()->route('siswa.ujian.index')
+                ->with('error', 'Ujian ini tidak tersedia untuk Anda. Hanya ujian dari guru dan mata pelajaran yang mengajar di kelas Anda yang dapat diakses.');
         }
 
         // Cek apakah ujian sudah berlangsung atau dijadwalkan
@@ -188,6 +219,16 @@ class UjianSiswaController extends Controller
                     'bobot' => $item->bobot,
                 ];
             });
+
+        // Debug: Log jika soal kosong
+        if ($soal->isEmpty()) {
+            Log::warning('Soal ujian kosong', [
+                'ujian_id' => $ujianSiswa->ujian_id,
+                'ujian_siswa_id' => $ujianSiswaId,
+                'mata_pelajaran' => $ujianSiswa->ujian->mataPelajaran->nama ?? 'N/A',
+                'judul_ujian' => $ujianSiswa->ujian->judul_ujian,
+            ]);
+        }
 
         // Ambil jawaban siswa yang sudah disimpan
         $jawaban = JawabanSiswa::where('ujian_siswa_id', $ujianSiswaId)

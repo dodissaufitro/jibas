@@ -19,9 +19,16 @@ class CheckRole
             return redirect()->route('custom.login.show');
         }
 
+        $user = $request->user();
+
+        // Load roles relationship if not already loaded
+        if (!$user->relationLoaded('roles')) {
+            $user->load('roles');
+        }
+
         // Check if user has any of the required roles
         foreach ($roles as $role) {
-            if ($request->user()->hasRole($role)) {
+            if ($user->hasRole($role)) {
                 return $next($request);
             }
         }

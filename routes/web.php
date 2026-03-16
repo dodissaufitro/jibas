@@ -17,6 +17,7 @@ use App\Http\Controllers\PresensiSiswaController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RekapPresensiSiswaController;
 use App\Http\Controllers\SiswaController;
+use App\Http\Controllers\SiswaExamController;
 use App\Http\Controllers\SoalUjianController;
 use App\Http\Controllers\TagihanController;
 use App\Http\Controllers\TahunAjaranController;
@@ -46,6 +47,7 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
+
     return Inertia::render('SchoolDashboard', [
         'stats' => [
             'totalSiswa' => 856,
@@ -103,16 +105,34 @@ Route::middleware('auth')->group(function () {
         Route::get('/raport', fn() => Inertia::render('ComingSoon', ['module' => 'Akademik - Raport']))->name('raport');
     });
 
-    // Ujian Routes
-    Route::middleware('permission:view_ujian')->group(function () {
-        Route::resource('ujian', UjianController::class);
+    // Ujian Routes (dengan granular permissions)
+    Route::prefix('ujian')->name('ujian.')->group(function () {
+        // View routes - untuk semua yang punya permission view_ujian (guru, admin)
+        Route::get('/', [UjianController::class, 'index'])->middleware('permission:view_ujian')->name('index');
+
+        // Jadwal Ujian - untuk yang punya permission view_jadwal_ujian (siswa, guru, admin)
+        Route::get('/jadwal', [UjianController::class, 'jadwal'])->middleware('permission:view_jadwal_ujian')->name('jadwal');
+
+        // Create routes - hanya untuk yang punya permission create_ujian (admin, guru)
+        Route::get('/create', [UjianController::class, 'create'])->middleware('permission:create_ujian')->name('create');
+        Route::post('/', [UjianController::class, 'store'])->middleware('permission:create_ujian')->name('store');
+
+        // Edit routes - hanya untuk yang punya permission edit_ujian (admin, guru)
+        Route::get('/{ujian}/edit', [UjianController::class, 'edit'])->middleware('permission:edit_ujian')->name('edit');
+        Route::put('/{ujian}', [UjianController::class, 'update'])->middleware('permission:edit_ujian')->name('update');
+
+        // Delete route - hanya untuk yang punya permission delete_ujian (admin)
+        Route::delete('/{ujian}', [UjianController::class, 'destroy'])->middleware('permission:delete_ujian')->name('destroy');
+
+        // Show route - taruh di akhir agar tidak menangkap route lainnya
+        Route::get('/{ujian}', [UjianController::class, 'show'])->middleware('permission:view_ujian')->name('show');
     });
 
-    // Jadwal Ujian (calendar view)
-    Route::get('ujian-jadwal', [UjianController::class, 'jadwal'])->middleware('permission:view_ujian')->name('ujian.jadwal');
+    // Jadwal Ujian (calendar view) - deprecated, sudah ada di atas
+    // Route::get('ujian-jadwal', [UjianController::class, 'jadwal'])->middleware('permission:view_ujian')->name('ujian.jadwal');
 
-    // Soal Ujian Routes (nested resource)
-    Route::prefix('ujian/{ujian}/soal')->name('ujian.soal.')->group(function () {
+    // Soal Ujian Routes (hanya untuk admin/guru dengan permission manage_soal_ujian)
+    Route::prefix('ujian/{ujian}/soal')->name('ujian.soal.')->middleware('permission:manage_soal_ujian')->group(function () {
         Route::get('/', [SoalUjianController::class, 'index'])->name('index');
         Route::get('/create', [SoalUjianController::class, 'create'])->name('create');
         Route::post('/', [SoalUjianController::class, 'store'])->name('store');
@@ -121,8 +141,15 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{soal}', [SoalUjianController::class, 'destroy'])->name('destroy');
     });
 
+    // Siswa Exam Dashboard (full-screen exam interface)
+    Route::prefix('siswa/exam')->name('siswa.exam.')->middleware('role:siswa')->group(function () {
+        Route::get('/dashboard', [SiswaExamController::class, 'dashboard'])->name('dashboard');
+        Route::get('/jadwal', [SiswaExamController::class, 'jadwalPelajaran'])->name('jadwal');
+    });
+
     // Ujian Siswa Routes (untuk siswa mengerjakan ujian)
-    Route::prefix('siswa/ujian')->name('siswa.ujian.')->group(function () {
+    // Siswa hanya bisa melihat dan mengikuti ujian, TIDAK bisa create/edit/delete
+    Route::prefix('siswa/ujian')->name('siswa.ujian.')->middleware('role:siswa')->group(function () {
         Route::get('/', [UjianSiswaController::class, 'index'])->name('index');
         Route::post('/akses-kode', [UjianSiswaController::class, 'aksesKode'])->name('akses-kode');
         Route::get('/{ujian}/mulai', [UjianSiswaController::class, 'mulai'])->name('mulai');
@@ -188,6 +215,9 @@ Route::middleware('auth')->group(function () {
             // Permission Management
             Route::get('/permissions', [UserController::class, 'permissions'])->name('permissions');
             Route::put('/roles/{roleId}/permissions', [UserController::class, 'updateRolePermissions'])->name('roles.permissions.update');
+
+            // Sync Siswa to Master Data
+            Route::post('/sync-siswa', [UserController::class, 'syncSiswaToMasterData'])->name('sync-siswa');
         });
 
         // Role Management Routes

@@ -82,6 +82,10 @@ class DatabaseSeeder extends Seeder
         $this->command->info('📄 Seeding ujian...');
         $this->call(UjianSeeder::class);
 
+        // 14. Seed Soal Ujian (30 soal Matematika Kelas 7)
+        $this->command->info('📝 Seeding soal ujian...');
+        $this->call(SoalUjianSeeder::class);
+
         $this->command->newLine();
         $this->command->info('✅ Database seeding completed successfully!');
         $this->command->newLine();

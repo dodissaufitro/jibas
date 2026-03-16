@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
 
 interface MataPelajaran {
@@ -23,6 +23,8 @@ interface Ujian {
     mata_pelajaran: MataPelajaran;
     guru: Guru;
     kelas: Kelas;
+    status_pengerjaan?: string;
+    ujian_siswa_id?: number;
 }
 
 interface Stats {
@@ -32,12 +34,22 @@ interface Stats {
     mendatang: number;
 }
 
+interface AuthProps {
+    roles?: string[];
+    isSuperAdmin?: boolean;
+}
+
 interface Props {
     ujian: Record<string, Ujian[]>;
     stats: Stats;
+    auth?: AuthProps;
 }
 
 export default function Jadwal({ ujian, stats }: Props) {
+    const page = usePage();
+    const auth = page.props.auth as AuthProps | undefined;
+    const roles = auth?.roles || [];
+    const isSiswa = roles.includes('siswa');
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -104,15 +116,27 @@ export default function Jadwal({ ujian, stats }: Props) {
                             <h1 className="text-4xl font-bold text-white mb-2">📅 Jadwal Ujian</h1>
                             <p className="text-white/90 text-lg">Kalender dan timeline ujian yang akan datang</p>
                         </div>
-                        <Link
-                            href={route('ujian.index')}
-                            className="bg-white text-indigo-600 px-6 py-3 rounded-xl font-semibold hover:bg-indigo-50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 flex items-center space-x-2"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                            </svg>
-                            <span>Lihat Semua Data</span>
-                        </Link>
+                        {isSiswa ? (
+                            <Link
+                                href={route('siswa.ujian.index')}
+                                className="bg-white text-indigo-600 px-6 py-3 rounded-xl font-semibold hover:bg-indigo-50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 flex items-center space-x-2"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span>Ujian Saya</span>
+                            </Link>
+                        ) : (
+                            <Link
+                                href={route('ujian.index')}
+                                className="bg-white text-indigo-600 px-6 py-3 rounded-xl font-semibold hover:bg-indigo-50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 flex items-center space-x-2"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                                </svg>
+                                <span>Lihat Semua Data</span>
+                            </Link>
+                        )}
                     </div>
                 </div>
             </div>
@@ -183,15 +207,17 @@ export default function Jadwal({ ujian, stats }: Props) {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         <p className="text-gray-500 text-lg mb-4">Tidak ada ujian yang dijadwalkan</p>
-                        <Link
-                            href={route('ujian.create')}
-                            className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"
-                        >
-                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                            </svg>
-                            Buat Ujian Baru
-                        </Link>
+                        {!isSiswa && (
+                            <Link
+                                href={route('ujian.create')}
+                                className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"
+                            >
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                                Buat Ujian Baru
+                            </Link>
+                        )}
                     </div>
                 ) : (
                     <div className="space-y-8">
@@ -223,9 +249,8 @@ export default function Jadwal({ ujian, stats }: Props) {
                                     {/* Events */}
                                     <div className="ml-24 space-y-4">
                                         {items.map((item) => (
-                                            <Link
+                                            <div
                                                 key={item.id}
-                                                href={route('ujian.soal.index', item.id)}
                                                 className="block bg-gradient-to-r from-white to-gray-50 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 hover:border-indigo-200 group"
                                             >
                                                 <div className="flex items-start justify-between">
@@ -244,10 +269,10 @@ export default function Jadwal({ ujian, stats }: Props) {
                                                                 {formatTime(item.tanggal_ujian)} • {item.durasi_menit} menit
                                                             </span>
                                                         </div>
-                                                        <h4 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors">
+                                                        <h4 className="text-lg font-bold text-gray-900 mb-2">
                                                             {item.judul_ujian}
                                                         </h4>
-                                                        <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                                        <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
                                                             <span className="flex items-center">
                                                                 <svg className="w-4 h-4 mr-1 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -267,16 +292,34 @@ export default function Jadwal({ ujian, stats }: Props) {
                                                                 {item.guru.nama_lengkap}
                                                             </span>
                                                         </div>
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div className="p-2 bg-indigo-50 rounded-lg group-hover:bg-indigo-100 transition-colors">
-                                                            <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                                            </svg>
-                                                        </div>
+
+                                                        {/* Action Button */}
+                                                        {isSiswa ? (
+                                                            <Link
+                                                                href={route('siswa.ujian.mulai', item.id)}
+                                                                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+                                                            >
+                                                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                                Mulai Ujian
+                                                            </Link>
+                                                        ) : (
+                                                            <Link
+                                                                href={route('ujian.soal.index', item.id)}
+                                                                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl font-semibold hover:from-gray-700 hover:to-gray-800 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+                                                            >
+                                                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                </svg>
+                                                                Lihat Detail
+                                                            </Link>
+                                                        )}
                                                     </div>
                                                 </div>
-                                            </Link>
+                                            </div>
                                         ))}
                                     </div>
                                 </div>

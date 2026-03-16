@@ -12,6 +12,28 @@ use Carbon\Carbon;
 class TagihanSeeder extends Seeder
 {
     /**
+     * Generate nomor tagihan unik
+     */
+    private function generateNomorTagihan($tahun, $bulan = null): string
+    {
+        $prefix = 'TGH';
+        $bulanStr = $bulan ? str_pad($bulan, 2, '0', STR_PAD_LEFT) : 'XX';
+        $lastTagihan = Tagihan::where('nomor_tagihan', 'like', "{$prefix}-{$tahun}-{$bulanStr}-%")
+            ->orderBy('nomor_tagihan', 'desc')
+            ->first();
+
+        if ($lastTagihan) {
+            // Extract last number and increment
+            $lastNumber = (int) substr($lastTagihan->nomor_tagihan, -4);
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+
+        return sprintf("%s-%s-%s-%04d", $prefix, $tahun, $bulanStr, $newNumber);
+    }
+
+    /**
      * Run the database seeds.
      */
     public function run(): void
@@ -78,6 +100,7 @@ class TagihanSeeder extends Seeder
                     }
 
                     Tagihan::create([
+                        'nomor_tagihan' => $this->generateNomorTagihan($tahun, $bulan),
                         'siswa_id' => $siswa->id,
                         'jenis_pembayaran_id' => $spp->id,
                         'bulan' => $bulan,
@@ -99,6 +122,7 @@ class TagihanSeeder extends Seeder
                 $jatuhTempoUts = Carbon::create($currentYear, $bulanUts, 1);
 
                 Tagihan::create([
+                    'nomor_tagihan' => $this->generateNomorTagihan($currentYear),
                     'siswa_id' => $siswa->id,
                     'jenis_pembayaran_id' => $uts->id,
                     'bulan' => null,
@@ -120,6 +144,7 @@ class TagihanSeeder extends Seeder
                 $jatuhTempoUas = Carbon::create($tahunUas, $bulanUas, 1);
 
                 Tagihan::create([
+                    'nomor_tagihan' => $this->generateNomorTagihan($tahunUas),
                     'siswa_id' => $siswa->id,
                     'jenis_pembayaran_id' => $uas->id,
                     'bulan' => null,
@@ -137,6 +162,7 @@ class TagihanSeeder extends Seeder
             // 4. Tagihan Uang Gedung tahunan (hanya untuk siswa angkatan 2024)
             if ($uangGedung && $siswa->nis && str_starts_with($siswa->nis, '2024')) {
                 Tagihan::create([
+                    'nomor_tagihan' => $this->generateNomorTagihan(2024),
                     'siswa_id' => $siswa->id,
                     'jenis_pembayaran_id' => $uangGedung->id,
                     'bulan' => null,
@@ -154,6 +180,7 @@ class TagihanSeeder extends Seeder
             // 5. Tagihan Seragam (untuk siswa baru)
             if ($seragam && $siswa->nis && str_starts_with($siswa->nis, '2024') && rand(1, 2) === 1) {
                 Tagihan::create([
+                    'nomor_tagihan' => $this->generateNomorTagihan(2024),
                     'siswa_id' => $siswa->id,
                     'jenis_pembayaran_id' => $seragam->id,
                     'bulan' => null,
@@ -171,6 +198,7 @@ class TagihanSeeder extends Seeder
             // 6. Tagihan Buku Pelajaran (untuk semua siswa di awal tahun ajaran)
             if ($buku && rand(1, 100) <= 60) {
                 Tagihan::create([
+                    'nomor_tagihan' => $this->generateNomorTagihan($currentYear),
                     'siswa_id' => $siswa->id,
                     'jenis_pembayaran_id' => $buku->id,
                     'bulan' => null,

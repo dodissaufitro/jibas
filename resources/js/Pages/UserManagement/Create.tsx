@@ -17,11 +17,22 @@ interface Permission {
     module: string;
 }
 
-interface Props {
-    roles: Role[];
+interface Kelas {
+    id: number;
+    nama_kelas: string;
+    tingkat: number;
+    jenjang?: {
+        id: number;
+        nama: string;
+    };
 }
 
-export default function Create({ roles }: Props) {
+interface Props {
+    roles: Role[];
+    kelasList: Kelas[];
+}
+
+export default function Create({ roles, kelasList }: Props) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         email: '',
@@ -31,6 +42,7 @@ export default function Create({ roles }: Props) {
         address: '',
         is_active: true,
         roles: [] as number[],
+        kelas_id: '',
     });
 
     const [selectedRoles, setSelectedRoles] = useState<Role[]>([]);
@@ -202,6 +214,31 @@ export default function Create({ roles }: Props) {
                             />
                             {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
                         </div>
+
+                        {/* Kelas - Only show if siswa role is selected */}
+                        {selectedRoles.some(role => role.name === 'siswa') && (
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    Kelas <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={data.kelas_id}
+                                    onChange={(e) => setData('kelas_id', e.target.value)}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                                >
+                                    <option value="">Pilih Kelas</option>
+                                    {kelasList && kelasList.map((kelas) => (
+                                        <option key={kelas.id} value={kelas.id}>
+                                            {kelas.nama_kelas} {kelas.jenjang && `- ${kelas.jenjang.nama}`}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.kelas_id && <p className="mt-1 text-sm text-red-600">{errors.kelas_id}</p>}
+                                <p className="mt-2 text-sm text-gray-500">
+                                    💡 Kelas harus dipilih untuk user dengan role siswa
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
