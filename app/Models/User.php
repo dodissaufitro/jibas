@@ -8,6 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * @method bool hasRole(string|array $role)
+ * @method bool hasPermission(string $permission)
+ * @method bool hasAnyPermission(array $permissions)
+ * @method bool hasAllPermissions(array $permissions)
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */

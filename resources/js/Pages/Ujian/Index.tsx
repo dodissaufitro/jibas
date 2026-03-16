@@ -276,6 +276,15 @@ export default function Index({ ujian, stats, filters }: Props) {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                     <div className="flex items-center space-x-2">
                                                         <Link
+                                                            href={route('ujian.hasil-siswa', item.id)}
+                                                            className="rounded-lg bg-green-50 p-2 text-green-600 transition hover:-translate-y-0.5 hover:bg-green-100 hover:text-green-900"
+                                                            title="Lihat Hasil Siswa"
+                                                        >
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                                            </svg>
+                                                        </Link>
+                                                        <Link
                                                             href={route('ujian.soal.index', item.id)}
                                                             className="rounded-lg bg-purple-50 p-2 text-purple-600 transition hover:-translate-y-0.5 hover:bg-purple-100 hover:text-purple-900"
                                                             title="Kelola Soal"

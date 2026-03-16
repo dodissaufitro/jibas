@@ -45,8 +45,33 @@ interface Props {
 }
 
 export default function Index({ ujian, siswa }: Props) {
+    // Debug logging
+    console.log('=== UJIAN SISWA INDEX DEBUG ===');
+    console.log('ujian:', ujian);
+    console.log('ujian type:', typeof ujian);
+    console.log('ujian is array:', Array.isArray(ujian));
+    console.log('ujian length:', ujian?.length);
+    console.log('siswa:', siswa);
+    console.log('===========================');
+
     const [kodeUjian, setKodeUjian] = React.useState('');
     const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+    // Validation: ensure ujian is an array
+    if (!ujian || !Array.isArray(ujian)) {
+        console.error('ERROR: ujian is not an array:', ujian);
+        return (
+            <SidebarLayout>
+                <Head title="Ujian Saya" />
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        <p className="font-bold">Error: Data ujian tidak valid</p>
+                        <p>Tipe data: {typeof ujian}, Array: {String(Array.isArray(ujian))}</p>
+                    </div>
+                </div>
+            </SidebarLayout>
+        );
+    }
 
     const handleAksesKode = (e: React.FormEvent) => {
         e.preventDefault();
@@ -253,8 +278,8 @@ export default function Index({ ujian, siswa }: Props) {
                                                 <div className="mt-3 flex items-center space-x-4">
                                                     <div>
                                                         <span className="text-gray-500 text-sm">Nilai: </span>
-                                                        <span className={`text-2xl ${getNilaiColor(item.nilai, item.kkm)}`}>
-                                                            {item.nilai.toFixed(2)}
+                                                        <span className={`text-2xl ${getNilaiColor(Number(item.nilai), item.kkm)}`}>
+                                                            {Number(item.nilai).toFixed(2)}
                                                         </span>
                                                     </div>
                                                 </div>

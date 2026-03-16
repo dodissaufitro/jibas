@@ -52,28 +52,49 @@ interface Props {
 }
 
 export default function Kerjakan({ ujianSiswa, soal, jawaban, sisaWaktu: initialSisaWaktu }: Props) {
+    // ALL HOOKS MUST BE CALLED FIRST (UNCONDITIONALLY) - React Rules of Hooks
     const [selectedJawaban, setSelectedJawaban] = useState<{ [key: number]: string }>({});
-    const [sisaWaktu, setSisaWaktu] = useState(initialSisaWaktu);
+    const [sisaWaktu, setSisaWaktu] = useState(typeof initialSisaWaktu === 'number' ? initialSisaWaktu : 0);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [hoveredQuestion, setHoveredQuestion] = useState<number | null>(null);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
-    // Load saved answers
+    // Load saved answers - MUST be called before any early returns
     useEffect(() => {
-        const savedAnswers: { [key: number]: string } = {};
-        Object.keys(jawaban).forEach((soalId) => {
-            savedAnswers[parseInt(soalId)] = jawaban[parseInt(soalId)].jawaban;
-        });
-        setSelectedJawaban(savedAnswers);
+        try {
+            const savedAnswers: { [key: number]: string } = {};
+            if (jawaban && typeof jawaban === 'object') {
+                Object.keys(jawaban).forEach((soalId) => {
+                    const id = parseInt(soalId);
+                    if (jawaban[id] && jawaban[id].jawaban) {
+                        savedAnswers[id] = jawaban[id].jawaban;
+                    }
+                });
+            }
+            console.log('Loaded saved answers:', savedAnswers);
+            setSelectedJawaban(savedAnswers);
+        } catch (error) {
+            console.error('Error loading saved answers:', error);
+        }
     }, [jawaban]);
 
-    // Timer countdown
+    // Timer countdown - MUST be called before any early returns
     useEffect(() => {
+        // Only run timer if we have valid data
+        if (!ujianSiswa || !soal || soal.length === 0) {
+            return;
+        }
+
         const timer = setInterval(() => {
             setSisaWaktu((prev) => {
                 if (prev <= 1) {
                     clearInterval(timer);
-                    handleSubmit();
+                    // Auto-submit when time is up
+                    if (!isSubmitting && ujianSiswa && ujianSiswa.id) {
+                        router.post(route('siswa.ujian.submit', ujianSiswa.id), {}, {
+                            onFinish: () => setIsSubmitting(false),
+                        });
+                    }
                     return 0;
                 }
                 return prev - 1;
@@ -81,7 +102,71 @@ export default function Kerjakan({ ujianSiswa, soal, jawaban, sisaWaktu: initial
         }, 1000);
 
         return () => clearInterval(timer);
-    }, []);
+    }, []); // Empty dependency array - only run once on mount
+
+    // Console log untuk debugging
+    console.log('=== KERJAKAN UJIAN DEBUG ===');
+    console.log('ujianSiswa:', ujianSiswa);
+    console.log('soal:', soal);
+    console.log('soal length:', soal?.length);
+    console.log('jawaban:', jawaban);
+    console.log('sisaWaktu:', initialSisaWaktu);
+    console.log('===========================');
+
+    // Validasi props - Cek apakah data ada
+    if (!ujianSiswa) {
+        console.error('ujianSiswa is null/undefined');
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+                    <svg className="mx-auto h-16 w-16 text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <h2 className="text-xl font-bold text-gray-800 mb-2">Data Ujian Siswa Tidak Ditemukan</h2>
+                    <p className="text-gray-600 mb-4">Terjadi kesalahan saat memuat data ujian siswa.</p>
+                    <a href="/siswa/ujian" className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
+                        Kembali ke Daftar Ujian
+                    </a>
+                </div>
+            </div>
+        );
+    }
+
+    if (!ujianSiswa.ujian) {
+        console.error('ujianSiswa.ujian is null/undefined');
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+                    <svg className="mx-auto h-16 w-16 text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <h2 className="text-xl font-bold text-gray-800 mb-2">Data Ujian Tidak Valid</h2>
+                    <p className="text-gray-600 mb-4">Informasi ujian tidak lengkap.</p>
+                    <a href="/siswa/ujian" className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
+                        Kembali ke Daftar Ujian
+                    </a>
+                </div>
+            </div>
+        );
+    }
+
+    if (!soal || soal.length === 0) {
+        console.error('Soal kosong atau undefined:', soal);
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-md">
+                    <svg className="mx-auto h-16 w-16 text-yellow-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <h2 className="text-xl font-bold text-gray-800 mb-2">Ujian Belum Memiliki Soal</h2>
+                    <p className="text-gray-600 mb-4">Ujian ini belum memiliki soal. Silakan hubungi guru pengampu.</p>
+                    <a href="/siswa/ujian" className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
+                        Kembali ke Daftar Ujian
+                    </a>
+                </div>
+            </div>
+        );
+    }
 
     const formatTime = (seconds: number) => {
         const hours = Math.floor(seconds / 3600);

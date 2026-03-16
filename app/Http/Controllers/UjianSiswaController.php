@@ -21,48 +21,117 @@ class UjianSiswaController extends Controller
      */
     public function index()
     {
-        // Ambil data siswa berdasarkan user yang login
-        $siswa = Siswa::where('user_id', Auth::id())->first();
+        try {
+            // Ambil data siswa berdasarkan user yang login
+            $siswa = Siswa::where('user_id', Auth::id())->first();
 
-        if (!$siswa) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Data siswa tidak ditemukan');
-        }
+            if (!$siswa) {
+                Log::warning('Siswa data not found for user', ['user_id' => Auth::id()]);
+                return redirect()->route('dashboard')
+                    ->with('error', 'Data siswa tidak ditemukan');
+            }
 
-        // Get guru_ids and mata_pelajaran_ids yang mengajar di kelas siswa
-        $jadwalKelas = \App\Models\JadwalPelajaran::where('kelas_id', $siswa->kelas_id)
-            ->get();
+            Log::info('Ujian Siswa Index - Loading', ['siswa_id' => $siswa->id, 'kelas_id' => $siswa->kelas_id]);
 
-        $guruIds = $jadwalKelas->pluck('guru_id')->unique()->toArray();
-        $mapelIds = $jadwalKelas->pluck('mata_pelajaran_id')->unique()->toArray();
+            // Get guru_ids and mata_pelajaran_ids yang mengajar di kelas siswa
+            $jadwalKelas = \App\Models\JadwalPelajaran::where('kelas_id', $siswa->kelas_id)
+                ->get();
 
-        // Ambil ujian yang tersedia untuk kelas siswa, HANYA dari guru dan mapel di jadwal
-        $ujian = Ujian::with(['mataPelajaran', 'guru', 'kelas'])
-            ->where('kelas_id', $siswa->kelas_id)
-            ->whereIn('guru_id', $guruIds)
-            ->whereIn('mata_pelajaran_id', $mapelIds)
-            ->whereIn('status', ['dijadwalkan', 'berlangsung'])
-            ->orderBy('tanggal_ujian', 'asc')
-            ->get()
-            ->map(function ($item) use ($siswa) {
+            $guruIds = $jadwalKelas->pluck('guru_id')->unique()->toArray();
+            $mapelIds = $jadwalKelas->pluck('mata_pelajaran_id')->unique()->toArray();
+
+            Log::info('Ujian Siswa Index - Jadwal', [
+                'guru_count' => count($guruIds),
+                'mapel_count' => count($mapelIds),
+                'guru_ids' => $guruIds,
+                'mapel_ids' => $mapelIds
+            ]);
+
+            // If no jadwal found, return empty ujian list
+            if (empty($guruIds) || empty($mapelIds)) {
+                Log::warning('Ujian Siswa Index - No jadwal found for kelas', ['kelas_id' => $siswa->kelas_id]);
+
+                return Inertia::render('Siswa/Ujian/Index', [
+                    'ujian' => [],
+                    'siswa' => $siswa,
+                ]);
+            }
+
+            // Ambil ujian yang tersedia untuk kelas siswa, HANYA dari guru dan mapel di jadwal
+            $ujianQuery = Ujian::with(['mataPelajaran', 'guru', 'kelas'])
+                ->where('kelas_id', $siswa->kelas_id)
+                ->whereIn('guru_id', $guruIds)
+                ->whereIn('mata_pelajaran_id', $mapelIds)
+                ->whereIn('status', ['dijadwalkan', 'berlangsung'])
+                ->orderBy('tanggal_ujian', 'asc')
+                ->get();
+
+            Log::info('Ujian Siswa Index - Raw ujian count', ['count' => $ujianQuery->count()]);
+
+            $ujian = $ujianQuery->map(function ($item) use ($siswa) {
                 // Cek apakah siswa sudah mengerjakan ujian ini
                 $ujianSiswa = UjianSiswa::where('ujian_id', $item->id)
                     ->where('siswa_id', $siswa->id)
                     ->first();
 
-                $item->status_pengerjaan = $ujianSiswa ? $ujianSiswa->status : 'belum_mulai';
-                $item->nilai = $ujianSiswa ? $ujianSiswa->nilai : null;
-                $item->waktu_mulai = $ujianSiswa ? $ujianSiswa->waktu_mulai : null;
-                $item->waktu_selesai = $ujianSiswa ? $ujianSiswa->waktu_selesai : null;
-                $item->ujian_siswa_id = $ujianSiswa ? $ujianSiswa->id : null;
+                // Create array representation with all needed data
+                return [
+                    'id' => $item->id,
+                    'judul_ujian' => $item->judul_ujian,
+                    'jenis_ujian' => $item->jenis_ujian,
+                    'tanggal_ujian' => $item->tanggal_ujian ? $item->tanggal_ujian->toISOString() : null,
+                    'durasi_menit' => $item->durasi_menit,
+                    'bobot' => $item->bobot,
+                    'kkm' => $item->kkm,
+                    'status' => $item->status,
+                    'mata_pelajaran' => [
+                        'nama' => $item->mataPelajaran->nama ?? 'N/A'
+                    ],
+                    'guru' => [
+                        'nama_lengkap' => $item->guru->nama_lengkap ?? 'N/A'
+                    ],
+                    'kelas' => [
+                        'nama_kelas' => $item->kelas->nama_kelas ?? $item->kelas->nama ?? 'N/A'
+                    ],
+                    'status_pengerjaan' => $ujianSiswa ? $ujianSiswa->status : 'belum_mulai',
+                    'nilai' => $ujianSiswa ? $ujianSiswa->nilai : null,
+                    'waktu_mulai' => $ujianSiswa && $ujianSiswa->waktu_mulai ? $ujianSiswa->waktu_mulai->toISOString() : null,
+                    'waktu_selesai' => $ujianSiswa && $ujianSiswa->waktu_selesai ? $ujianSiswa->waktu_selesai->toISOString() : null,
+                    'ujian_siswa_id' => $ujianSiswa ? $ujianSiswa->id : null,
+                ];
+            })
+                ->values() // Reset array keys
+                ->toArray(); // Convert to array for proper JSON serialization
 
-                return $item;
-            });
+            Log::info('Ujian Siswa Index - Ujian loaded', ['count' => count($ujian)]);
 
-        return Inertia::render('Siswa/Ujian/Index', [
-            'ujian' => $ujian,
-            'siswa' => $siswa,
-        ]);
+            return Inertia::render('Siswa/Ujian/Index', [
+                'ujian' => $ujian,
+                'siswa' => [
+                    'id' => $siswa->id,
+                    'nama_lengkap' => $siswa->nama_lengkap,
+                    'nis' => $siswa->nis,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in UjianSiswa index method', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Return Inertia page with error instead of redirect
+            return Inertia::render('Siswa/Ujian/Index', [
+                'ujian' => [],
+                'siswa' => [
+                    'id' => 0,
+                    'nama_lengkap' => 'Error Loading',
+                    'nis' => '',
+                ],
+                'error' => 'Terjadi kesalahan saat memuat daftar ujian: ' . $e->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -179,82 +248,116 @@ class UjianSiswaController extends Controller
      */
     public function kerjakan($ujianSiswaId)
     {
-        $ujianSiswa = UjianSiswa::with([
-            'ujian.mataPelajaran',
-            'ujian.guru',
-            'ujian.kelas',
-            'siswa'
-        ])->findOrFail($ujianSiswaId);
+        try {
+            $ujianSiswa = UjianSiswa::with([
+                'ujian.mataPelajaran',
+                'ujian.guru',
+                'ujian.kelas',
+                'siswa'
+            ])->findOrFail($ujianSiswaId);
 
-        // Cek apakah ujian ini milik siswa yang login
-        $siswa = Siswa::where('user_id', Auth::id())->first();
-        if ($ujianSiswa->siswa_id !== $siswa->id) {
-            return redirect()->route('siswa.ujian.index')
-                ->with('error', 'Anda tidak memiliki akses ke ujian ini');
-        }
+            // Cek apakah ujian ini milik siswa yang login
+            $siswa = Siswa::where('user_id', Auth::id())->first();
 
-        // Cek apakah ujian sudah selesai
-        if ($ujianSiswa->status === 'selesai') {
-            return redirect()->route('siswa.ujian.hasil', $ujianSiswaId)
-                ->with('info', 'Anda sudah menyelesaikan ujian ini');
-        }
+            if (!$siswa) {
+                Log::error('Siswa not found for user', ['user_id' => Auth::id()]);
+                return redirect()->route('dashboard')
+                    ->with('error', 'Data siswa tidak ditemukan');
+            }
 
-        // Ambil semua soal ujian (hanya pilihan ganda)
-        $soal = SoalUjian::where('ujian_id', $ujianSiswa->ujian_id)
-            ->where('tipe_soal', 'pilihan_ganda')
-            ->orderBy('nomor_soal')
-            ->get()
-            ->map(function ($item) {
-                // Hilangkan jawaban benar dari response
-                return [
-                    'id' => $item->id,
-                    'nomor_soal' => $item->nomor_soal,
-                    'pertanyaan' => $item->pertanyaan,
-                    'opsi_a' => $item->opsi_a,
-                    'opsi_b' => $item->opsi_b,
-                    'opsi_c' => $item->opsi_c,
-                    'opsi_d' => $item->opsi_d,
-                    'opsi_e' => $item->opsi_e,
-                    'file_soal' => $item->file_soal,
-                    'bobot' => $item->bobot,
-                ];
-            });
+            if ($ujianSiswa->siswa_id !== $siswa->id) {
+                Log::warning('Unauthorized access attempt', [
+                    'ujian_siswa_id' => $ujianSiswaId,
+                    'siswa_id' => $siswa->id,
+                    'actual_siswa_id' => $ujianSiswa->siswa_id
+                ]);
+                return redirect()->route('siswa.ujian.index')
+                    ->with('error', 'Anda tidak memiliki akses ke ujian ini');
+            }
 
-        // Debug: Log jika soal kosong
-        if ($soal->isEmpty()) {
-            Log::warning('Soal ujian kosong', [
-                'ujian_id' => $ujianSiswa->ujian_id,
+            // Cek apakah ujian sudah selesai
+            if ($ujianSiswa->status === 'selesai') {
+                return redirect()->route('siswa.ujian.hasil', $ujianSiswaId)
+                    ->with('info', 'Anda sudah menyelesaikan ujian ini');
+            }
+
+            // Ambil semua soal ujian (hanya pilihan ganda)
+            $soal = SoalUjian::where('ujian_id', $ujianSiswa->ujian_id)
+                ->where('tipe_soal', 'pilihan_ganda')
+                ->orderBy('nomor_soal')
+                ->get()
+                ->map(function ($item) {
+                    // Hilangkan jawaban benar dari response
+                    return [
+                        'id' => $item->id,
+                        'nomor_soal' => $item->nomor_soal,
+                        'pertanyaan' => $item->pertanyaan,
+                        'opsi_a' => $item->opsi_a,
+                        'opsi_b' => $item->opsi_b,
+                        'opsi_c' => $item->opsi_c,
+                        'opsi_d' => $item->opsi_d,
+                        'opsi_e' => $item->opsi_e,
+                        'file_soal' => $item->file_soal,
+                        'bobot' => $item->bobot,
+                    ];
+                });
+
+            // Debug: Log jika soal kosong
+            if ($soal->isEmpty()) {
+                Log::warning('Soal ujian kosong', [
+                    'ujian_id' => $ujianSiswa->ujian_id,
+                    'ujian_siswa_id' => $ujianSiswaId,
+                    'mata_pelajaran' => $ujianSiswa->ujian->mataPelajaran->nama ?? 'N/A',
+                    'judul_ujian' => $ujianSiswa->ujian->judul_ujian,
+                ]);
+
+                return redirect()->route('siswa.ujian.index')
+                    ->with('error', 'Ujian ini belum memiliki soal. Silakan hubungi guru pengampu.');
+            }
+
+            // Ambil jawaban siswa yang sudah disimpan
+            $jawaban = JawabanSiswa::where('ujian_siswa_id', $ujianSiswaId)
+                ->get()
+                ->keyBy('soal_ujian_id');
+
+            // Hitung sisa waktu
+            $waktuMulai = Carbon::parse($ujianSiswa->waktu_mulai);
+            $waktuSekarang = now();
+            $durasiUjian = $ujianSiswa->ujian->durasi_menit;
+            $waktuBerakhir = $waktuMulai->copy()->addMinutes($durasiUjian);
+            $sisaWaktu = max(0, $waktuSekarang->diffInSeconds($waktuBerakhir, false));
+
+            // Jika waktu habis, otomatis submit
+            if ($sisaWaktu <= 0) {
+                $this->submitUjian($ujianSiswaId);
+                return redirect()->route('siswa.ujian.hasil', $ujianSiswaId)
+                    ->with('warning', 'Waktu ujian telah habis. Ujian Anda telah disubmit otomatis.');
+            }
+
+            // Log untuk debugging
+            Log::info('Rendering kerjakan page', [
                 'ujian_siswa_id' => $ujianSiswaId,
-                'mata_pelajaran' => $ujianSiswa->ujian->mataPelajaran->nama ?? 'N/A',
-                'judul_ujian' => $ujianSiswa->ujian->judul_ujian,
+                'soal_count' => $soal->count(),
+                'jawaban_count' => $jawaban->count(),
+                'sisa_waktu' => $sisaWaktu,
             ]);
+
+            return Inertia::render('Siswa/Ujian/Kerjakan', [
+                'ujianSiswa' => $ujianSiswa,
+                'soal' => $soal->values(), // Convert to array with numeric keys
+                'jawaban' => $jawaban,
+                'sisaWaktu' => $sisaWaktu, // dalam detik
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in kerjakan method', [
+                'ujian_siswa_id' => $ujianSiswaId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return redirect()->route('siswa.ujian.index')
+                ->with('error', 'Terjadi kesalahan saat memuat ujian. Silakan coba lagi.');
         }
-
-        // Ambil jawaban siswa yang sudah disimpan
-        $jawaban = JawabanSiswa::where('ujian_siswa_id', $ujianSiswaId)
-            ->get()
-            ->keyBy('soal_ujian_id');
-
-        // Hitung sisa waktu
-        $waktuMulai = Carbon::parse($ujianSiswa->waktu_mulai);
-        $waktuSekarang = now();
-        $durasiUjian = $ujianSiswa->ujian->durasi_menit;
-        $waktuBerakhir = $waktuMulai->copy()->addMinutes($durasiUjian);
-        $sisaWaktu = max(0, $waktuSekarang->diffInSeconds($waktuBerakhir, false));
-
-        // Jika waktu habis, otomatis submit
-        if ($sisaWaktu <= 0) {
-            $this->submitUjian($ujianSiswaId);
-            return redirect()->route('siswa.ujian.hasil', $ujianSiswaId)
-                ->with('warning', 'Waktu ujian telah habis. Ujian Anda telah disubmit otomatis.');
-        }
-
-        return Inertia::render('Siswa/Ujian/Kerjakan', [
-            'ujianSiswa' => $ujianSiswa,
-            'soal' => $soal,
-            'jawaban' => $jawaban,
-            'sisaWaktu' => $sisaWaktu, // dalam detik
-        ]);
     }
 
     /**
@@ -297,12 +400,12 @@ class UjianSiswaController extends Controller
     /**
      * Submit ujian
      */
-    public function submit($ujianSiswaId)
+    public function submit(Request $request, $ujianSiswaId)
     {
         $this->submitUjian($ujianSiswaId);
 
-        return redirect()->route('siswa.ujian.hasil', $ujianSiswaId)
-            ->with('success', 'Ujian berhasil disubmit');
+        // Redirect langsung ke hasil ujian
+        return redirect()->route('siswa.ujian.hasil', $ujianSiswaId);
     }
 
     /**
@@ -403,7 +506,7 @@ class UjianSiswaController extends Controller
 
         // Cek apakah ujian ini milik siswa yang login
         $siswa = Siswa::where('user_id', Auth::id())->first();
-        if ($ujianSiswa->siswa_id !== $siswa->id) {
+        if (!$siswa || $ujianSiswa->siswa_id !== $siswa->id) {
             return redirect()->route('siswa.ujian.index')
                 ->with('error', 'Anda tidak memiliki akses ke hasil ujian ini');
         }
@@ -413,6 +516,9 @@ class UjianSiswaController extends Controller
             return redirect()->route('siswa.ujian.kerjakan', $ujianSiswaId)
                 ->with('info', 'Selesaikan ujian terlebih dahulu');
         }
+
+        // Sort jawaban berdasarkan nomor soal
+        $ujianSiswa->jawaban = $ujianSiswa->jawaban->sortBy('soalUjian.nomor_soal')->values();
 
         return Inertia::render('Siswa/Ujian/Hasil', [
             'ujianSiswa' => $ujianSiswa,

@@ -70,7 +70,12 @@ export default function Hasil({ ujianSiswa }: Props) {
     const totalSoal = ujianSiswa.jumlah_benar + ujianSiswa.jumlah_salah + ujianSiswa.jumlah_kosong;
     const persentaseBenar = totalSoal > 0 ? ((ujianSiswa.jumlah_benar / totalSoal) * 100).toFixed(1) : 0;
 
+    // Console log untuk debugging
+    console.log('UjianSiswa Data:', ujianSiswa);
+    console.log('Jawaban:', ujianSiswa.jawaban);
+
     const formatDate = (dateString: string) => {
+        if (!dateString) return 'N/A';
         const date = new Date(dateString);
         return date.toLocaleDateString('id-ID', {
             weekday: 'long',
@@ -83,6 +88,7 @@ export default function Hasil({ ujianSiswa }: Props) {
     };
 
     const getOpsiLabel = (soal: SoalUjian, opsi: string): string => {
+        if (!soal || !opsi) return '';
         const key = `opsi_${opsi.toLowerCase()}` as keyof SoalUjian;
         return soal[key] as string || '';
     };
@@ -121,7 +127,7 @@ export default function Hasil({ ujianSiswa }: Props) {
                             <p className="text-lg mb-6 text-white/90">{ujianSiswa.ujian.judul_ujian}</p>
                             <div className="inline-flex items-center justify-center">
                                 <div className="text-center">
-                                    <p className="text-6xl font-bold">{ujianSiswa.nilai.toFixed(2)}</p>
+                                    <p className="text-6xl font-bold">{Number(ujianSiswa.nilai).toFixed(2)}</p>
                                     <p className="text-sm text-white/80 mt-2">KKM: {ujianSiswa.ujian.kkm}</p>
                                 </div>
                             </div>
@@ -220,69 +226,86 @@ export default function Hasil({ ujianSiswa }: Props) {
                     {/* Pembahasan */}
                     <div className="rounded-2xl border border-white/70 bg-white/85 p-6 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.35)] backdrop-blur">
                         <h3 className="text-lg font-bold text-slate-900 mb-4">Pembahasan Soal</h3>
-                        <div className="space-y-4">
-                            {ujianSiswa.jawaban.map((jawaban, index) => (
-                                <div
-                                    key={jawaban.soal_ujian.id}
-                                    className={`rounded-xl border-2 p-4 ${
-                                        jawaban.is_benar
-                                            ? 'border-green-200 bg-green-50'
-                                            : 'border-red-200 bg-red-50'
-                                    }`}
-                                >
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="flex items-center space-x-3">
-                                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
-                                                {jawaban.soal_ujian.nomor_soal}
-                                            </span>
-                                            {jawaban.is_benar ? (
-                                                <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
-                                                    <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                    Benar
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800">
-                                                    <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                    Salah
-                                                </span>
-                                            )}
-                                        </div>
-                                        <span className="text-sm text-gray-600">Bobot: {jawaban.soal_ujian.bobot} poin</span>
-                                    </div>
+                        
+                        {ujianSiswa.jawaban && ujianSiswa.jawaban.length > 0 ? (
+                            <div className="space-y-4">
+                                {ujianSiswa.jawaban.map((jawaban, index) => {
+                                    // Skip jika soal_ujian tidak ada
+                                    if (!jawaban.soal_ujian) {
+                                        return null;
+                                    }
 
-                                    <div className="mb-3">
-                                        <div className="prose max-w-none text-slate-900" dangerouslySetInnerHTML={{ __html: jawaban.soal_ujian.pertanyaan }} />
-                                    </div>
+                                    return (
+                                        <div
+                                            key={jawaban.soal_ujian.id}
+                                            className={`rounded-xl border-2 p-4 ${
+                                                jawaban.is_benar
+                                                    ? 'border-green-200 bg-green-50'
+                                                    : 'border-red-200 bg-red-50'
+                                            }`}
+                                        >
+                                            <div className="flex items-start justify-between mb-3">
+                                                <div className="flex items-center space-x-3">
+                                                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
+                                                        {jawaban.soal_ujian.nomor_soal}
+                                                    </span>
+                                                    {jawaban.is_benar ? (
+                                                        <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
+                                                            <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                            Benar
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-800">
+                                                            <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                            Salah
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <span className="text-sm text-gray-600">Bobot: {jawaban.soal_ujian.bobot} poin</span>
+                                            </div>
 
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex items-start space-x-2">
-                                            <span className="font-semibold text-gray-700">Jawaban Anda:</span>
-                                            <span className={`font-semibold ${jawaban.is_benar ? 'text-green-700' : 'text-red-700'}`}>
-                                                {jawaban.jawaban} - {getOpsiLabel(jawaban.soal_ujian, jawaban.jawaban)}
-                                            </span>
+                                            <div className="mb-3">
+                                                <div className="prose max-w-none text-slate-900" dangerouslySetInnerHTML={{ __html: jawaban.soal_ujian.pertanyaan }} />
+                                            </div>
+
+                                            <div className="space-y-2 text-sm">
+                                                <div className="flex items-start space-x-2">
+                                                    <span className="font-semibold text-gray-700">Jawaban Anda:</span>
+                                                    <span className={`font-semibold ${jawaban.is_benar ? 'text-green-700' : 'text-red-700'}`}>
+                                                        {jawaban.jawaban} - {getOpsiLabel(jawaban.soal_ujian, jawaban.jawaban)}
+                                                    </span>
+                                                </div>
+                                                {!jawaban.is_benar && (
+                                                    <div className="flex items-start space-x-2">
+                                                        <span className="font-semibold text-gray-700">Jawaban Benar:</span>
+                                                        <span className="font-semibold text-green-700">
+                                                            {jawaban.soal_ujian.jawaban_benar} - {getOpsiLabel(jawaban.soal_ujian, jawaban.soal_ujian.jawaban_benar)}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {jawaban.soal_ujian.pembahasan && (
+                                                    <div className="mt-3 rounded-lg bg-blue-50 p-3 border border-blue-200">
+                                                        <p className="font-semibold text-blue-900 mb-1">Pembahasan:</p>
+                                                        <p className="text-blue-800">{jawaban.soal_ujian.pembahasan}</p>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                        {!jawaban.is_benar && (
-                                            <div className="flex items-start space-x-2">
-                                                <span className="font-semibold text-gray-700">Jawaban Benar:</span>
-                                                <span className="font-semibold text-green-700">
-                                                    {jawaban.soal_ujian.jawaban_benar} - {getOpsiLabel(jawaban.soal_ujian, jawaban.soal_ujian.jawaban_benar)}
-                                                </span>
-                                            </div>
-                                        )}
-                                        {jawaban.soal_ujian.pembahasan && (
-                                            <div className="mt-3 rounded-lg bg-blue-50 p-3 border border-blue-200">
-                                                <p className="font-semibold text-blue-900 mb-1">Pembahasan:</p>
-                                                <p className="text-blue-800">{jawaban.soal_ujian.pembahasan}</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="text-center py-8">
+                                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <p className="mt-2 text-sm text-gray-600">Tidak ada jawaban yang tersimpan untuk ujian ini.</p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Back Button */}

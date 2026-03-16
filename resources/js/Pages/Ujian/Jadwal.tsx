@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, Head } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
 
 interface MataPelajaran {
@@ -46,10 +46,26 @@ interface Props {
 }
 
 export default function Jadwal({ ujian, stats }: Props) {
+    // Debug logging
+    console.log('=== JADWAL UJIAN DEBUG ===');
+    console.log('ujian:', ujian);
+    console.log('ujian type:', typeof ujian);
+    console.log('ujian keys:', Object.keys(ujian || {}));
+    console.log('stats:', stats);
+    console.log('===========================');
+
     const page = usePage();
     const auth = page.props.auth as AuthProps | undefined;
     const roles = auth?.roles || [];
     const isSiswa = roles.includes('siswa');
+
+    // Validation
+    if (!ujian || typeof ujian !== 'object') {
+        console.error('Invalid ujian data:', ujian);
+    }
+    if (!stats || typeof stats !== 'object') {
+        console.error('Invalid stats data:', stats);
+    }
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -99,8 +115,10 @@ export default function Jadwal({ ujian, stats }: Props) {
     };
 
     return (
-        <SidebarLayout>
-            {/* Floating Blur Orbs */}
+        <>
+            <Head title="Jadwal Ujian" />
+            <SidebarLayout>
+                {/* Floating Blur Orbs */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
                 <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
@@ -328,6 +346,7 @@ export default function Jadwal({ ujian, stats }: Props) {
                     </div>
                 )}
             </div>
-        </SidebarLayout>
+            </SidebarLayout>
+        </>
     );
 }

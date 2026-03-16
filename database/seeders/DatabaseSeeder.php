@@ -2,6 +2,17 @@
 
 namespace Database\Seeders;
 
+use App\Models\Guru;
+use App\Models\Institution;
+use App\Models\JadwalPelajaran;
+use App\Models\JawabanSiswa;
+use App\Models\Kelas;
+use App\Models\Permission;
+use App\Models\Role;
+use App\Models\Siswa;
+use App\Models\SoalUjian;
+use App\Models\Ujian;
+use App\Models\UjianSiswa;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -44,7 +55,7 @@ class DatabaseSeeder extends Seeder
         $this->call(UserSeeder::class);
 
         // Update users with default institution (for users without institution)
-        $defaultInstitutionId = \App\Models\Institution::query()->orderBy('id')->value('id');
+        $defaultInstitutionId = Institution::query()->orderBy('id')->value('id');
         if ($defaultInstitutionId) {
             User::query()->whereNull('institution_id')->update(['institution_id' => $defaultInstitutionId]);
             $this->command->info('✓ Updated users with default institution');
@@ -98,6 +109,10 @@ class DatabaseSeeder extends Seeder
         $this->command->info('👨‍🎓 Seeding contoh siswa (SMP, SMA, SMK)...');
         $this->call(ContohSiswaSeeder::class);
 
+        // 18. Seed Contoh Ujian dengan hasil siswa (untuk testing)
+        $this->command->info('📊 Seeding contoh ujian dengan hasil siswa...');
+        $this->call(ContohUjianSeeder::class);
+
         $this->command->newLine();
         $this->command->info('✅ Database seeding completed successfully!');
         $this->command->newLine();
@@ -106,16 +121,18 @@ class DatabaseSeeder extends Seeder
         $this->command->table(
             ['Resource', 'Count'],
             [
-                ['Institutions', \App\Models\Institution::count()],
+                ['Institutions', Institution::count()],
                 ['Users', User::count()],
-                ['Roles', \App\Models\Role::count()],
-                ['Permissions', \App\Models\Permission::count()],
-                ['Guru', \App\Models\Guru::count()],
-                ['Siswa', \App\Models\Siswa::count()],
-                ['Kelas', \App\Models\Kelas::count()],
-                ['Jadwal Pelajaran', \App\Models\JadwalPelajaran::count()],
-                ['Ujian', \App\Models\Ujian::count()],
-                ['Soal Ujian', \App\Models\SoalUjian::count()],
+                ['Roles', Role::count()],
+                ['Permissions', Permission::count()],
+                ['Guru', Guru::count()],
+                ['Siswa', Siswa::count()],
+                ['Kelas', Kelas::count()],
+                ['Jadwal Pelajaran', JadwalPelajaran::count()],
+                ['Ujian', Ujian::count()],
+                ['Soal Ujian', SoalUjian::count()],
+                ['Ujian Siswa', UjianSiswa::count()],
+                ['Jawaban Siswa', JawabanSiswa::count()],
             ]
         );
     }

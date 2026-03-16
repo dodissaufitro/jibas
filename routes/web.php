@@ -124,6 +124,9 @@ Route::middleware('auth')->group(function () {
         // Delete route - hanya untuk yang punya permission delete_ujian (admin)
         Route::delete('/{ujian}', [UjianController::class, 'destroy'])->middleware('permission:delete_ujian')->name('destroy');
 
+        // Hasil Siswa route - untuk melihat hasil ujian per siswa (guru)
+        Route::get('/{ujian}/hasil-siswa', [UjianController::class, 'hasilSiswa'])->middleware('permission:view_ujian')->name('hasil-siswa');
+
         // Show route - taruh di akhir agar tidak menangkap route lainnya
         Route::get('/{ujian}', [UjianController::class, 'show'])->middleware('permission:view_ujian')->name('show');
     });
