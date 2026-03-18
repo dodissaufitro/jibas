@@ -40,9 +40,34 @@ export default function Create({ roles, kelasList }: Props) {
         password_confirmation: '',
         phone: '',
         address: '',
+        nik: '',
+        jenis_kelamin: '',
+        tempat_lahir: '',
+        tanggal_lahir: '',
         is_active: true,
         roles: [] as number[],
         kelas_id: '',
+        // Guru specific fields
+        guru_data: {
+            nip: '',
+            pendidikan_terakhir: 'S1',
+            status_kepegawaian: 'GTY',
+            tanggal_masuk: '',
+            mata_pelajaran_id: '',
+            no_rekening: '',
+            bank: '',
+        },
+        // Siswa specific fields
+        siswa_data: {
+            nis: '',
+            nisn: '',
+            nama_ayah: '',
+            nama_ibu: '',
+            no_hp_ortu: '',
+            pekerjaan_ayah: '',
+            pekerjaan_ibu: '',
+            tahun_masuk: new Date().getFullYear().toString(),
+        },
     });
 
     const [selectedRoles, setSelectedRoles] = useState<Role[]>([]);
@@ -185,6 +210,68 @@ export default function Create({ roles, kelasList }: Props) {
                             {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
                         </div>
 
+                        {/* NIK */}
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                                NIK (KTP)
+                            </label>
+                            <input
+                                type="text"
+                                value={data.nik}
+                                onChange={(e) => setData('nik', e.target.value)}
+                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                                placeholder="16 digit NIK"
+                                maxLength={16}
+                            />
+                            {errors.nik && <p className="mt-1 text-sm text-red-600">{errors.nik}</p>}
+                        </div>
+
+                        {/* Jenis Kelamin */}
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                                Jenis Kelamin <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                value={data.jenis_kelamin}
+                                onChange={(e) => setData('jenis_kelamin', e.target.value)}
+                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                            >
+                                <option value="">Pilih Jenis Kelamin</option>
+                                <option value="L">Laki-laki</option>
+                                <option value="P">Perempuan</option>
+                            </select>
+                            {errors.jenis_kelamin && <p className="mt-1 text-sm text-red-600">{errors.jenis_kelamin}</p>}
+                        </div>
+
+                        {/* Tempat Lahir */}
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                                Tempat Lahir
+                            </label>
+                            <input
+                                type="text"
+                                value={data.tempat_lahir}
+                                onChange={(e) => setData('tempat_lahir', e.target.value)}
+                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                                placeholder="Kota kelahiran"
+                            />
+                            {errors.tempat_lahir && <p className="mt-1 text-sm text-red-600">{errors.tempat_lahir}</p>}
+                        </div>
+
+                        {/* Tanggal Lahir */}
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                                Tanggal Lahir
+                            </label>
+                            <input
+                                type="date"
+                                value={data.tanggal_lahir}
+                                onChange={(e) => setData('tanggal_lahir', e.target.value)}
+                                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
+                            />
+                            {errors.tanggal_lahir && <p className="mt-1 text-sm text-red-600">{errors.tanggal_lahir}</p>}
+                        </div>
+
                         {/* Status */}
                         <div className="flex items-center">
                             <label className="flex items-center cursor-pointer">
@@ -241,6 +328,255 @@ export default function Create({ roles, kelasList }: Props) {
                         )}
                     </div>
                 </div>
+
+                {/* Guru Specific Data - Conditional */}
+                {selectedRoles.some(role => role.name === 'guru') && (
+                    <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-blue-100 transform transition-all duration-300">
+                        <div className="mb-6 pb-6 border-b-2 border-gradient-to-r from-blue-200 to-indigo-200">
+                            <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2 flex items-center">
+                                <span className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white mr-3">
+                                    👨‍🏫
+                                </span>
+                                Data Guru
+                            </h3>
+                            <p className="text-sm text-gray-600">Informasi khusus untuk guru/pendidik</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* NIP */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    NIP (Nomor Induk Pegawai)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.guru_data.nip}
+                                    onChange={(e) => setData('guru_data', { ...data.guru_data, nip: e.target.value })}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                    placeholder="Kosongkan untuk auto-generate"
+                                />
+                                <p className="mt-1 text-xs text-gray-500">💡 Jika dikosongkan, NIP akan digenerate otomatis</p>
+                            </div>
+
+                            {/* Pendidikan Terakhir */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    Pendidikan Terakhir
+                                </label>
+                                <select
+                                    value={data.guru_data.pendidikan_terakhir}
+                                    onChange={(e) => setData('guru_data', { ...data.guru_data, pendidikan_terakhir: e.target.value })}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                >
+                                    <option value="SMA">SMA/Sederajat</option>
+                                    <option value="D3">D3</option>
+                                    <option value="S1">S1</option>
+                                    <option value="S2">S2</option>
+                                    <option value="S3">S3</option>
+                                </select>
+                            </div>
+
+                            {/* Status Kepegawaian */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    Status Kepegawaian
+                                </label>
+                                <select
+                                    value={data.guru_data.status_kepegawaian}
+                                    onChange={(e) => setData('guru_data', { ...data.guru_data, status_kepegawaian: e.target.value })}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                >
+                                    <option value="PNS">PNS</option>
+                                    <option value="GTY">Guru Tetap Yayasan (GTY)</option>
+                                    <option value="GTT">Guru Tidak Tetap (GTT)</option>
+                                    <option value="Honorer">Honorer</option>
+                                </select>
+                            </div>
+
+                            {/* Tanggal Masuk */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    Tanggal Masuk
+                                </label>
+                                <input
+                                    type="date"
+                                    value={data.guru_data.tanggal_masuk}
+                                    onChange={(e) => setData('guru_data', { ...data.guru_data, tanggal_masuk: e.target.value })}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                />
+                            </div>
+
+                            {/* Bank */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    Bank
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.guru_data.bank}
+                                    onChange={(e) => setData('guru_data', { ...data.guru_data, bank: e.target.value })}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                    placeholder="Nama bank"
+                                />
+                            </div>
+
+                            {/* No Rekening */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    Nomor Rekening
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.guru_data.no_rekening}
+                                    onChange={(e) => setData('guru_data', { ...data.guru_data, no_rekening: e.target.value })}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                    placeholder="Nomor rekening bank"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Siswa Specific Data - Conditional */}
+                {selectedRoles.some(role => role.name === 'siswa') && (
+                    <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-green-100 transform transition-all duration-300">
+                        <div className="mb-6 pb-6 border-b-2 border-gradient-to-r from-green-200 to-emerald-200">
+                            <h3 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2 flex items-center">
+                                <span className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center text-white mr-3">
+                                    👨‍🎓
+                                </span>
+                                Data Siswa
+                            </h3>
+                            <p className="text-sm text-gray-600">Informasi siswa dan data orang tua/wali</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* NIS */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    NIS (Nomor Induk Siswa)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.siswa_data.nis}
+                                    onChange={(e) => setData('siswa_data', { ...data.siswa_data, nis: e.target.value })}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all"
+                                    placeholder="Nomor Induk Siswa"
+                                />
+                            </div>
+
+                            {/* NISN */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    NISN (Nomor Induk Siswa Nasional)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.siswa_data.nisn}
+                                    onChange={(e) => setData('siswa_data', { ...data.siswa_data, nisn: e.target.value })}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all"
+                                    placeholder="NISN (10 digit)"
+                                />
+                            </div>
+
+                            {/* Tahun Masuk */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    Tahun Masuk
+                                </label>
+                                <input
+                                    type="number"
+                                    value={data.siswa_data.tahun_masuk}
+                                    onChange={(e) => setData('siswa_data', { ...data.siswa_data, tahun_masuk: e.target.value })}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all"
+                                    placeholder="2024"
+                                    min="2000"
+                                    max={new Date().getFullYear() + 1}
+                                />
+                            </div>
+
+                            {/* Divider */}
+                            <div className="md:col-span-2 mt-4 mb-2">
+                                <h4 className="text-lg font-bold text-gray-800 flex items-center">
+                                    <span className="w-8 h-8 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg flex items-center justify-center text-white text-sm mr-2">
+                                        👪
+                                    </span>
+                                    Data Orang Tua/Wali
+                                </h4>
+                            </div>
+
+                            {/* Nama Ayah */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    Nama Ayah
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.siswa_data.nama_ayah}
+                                    onChange={(e) => setData('siswa_data', { ...data.siswa_data, nama_ayah: e.target.value })}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all"
+                                    placeholder="Nama lengkap ayah"
+                                />
+                            </div>
+
+                            {/* Nama Ibu */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    Nama Ibu
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.siswa_data.nama_ibu}
+                                    onChange={(e) => setData('siswa_data', { ...data.siswa_data, nama_ibu: e.target.value })}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all"
+                                    placeholder="Nama lengkap ibu"
+                                />
+                            </div>
+
+                            {/* Pekerjaan Ayah */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    Pekerjaan Ayah
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.siswa_data.pekerjaan_ayah}
+                                    onChange={(e) => setData('siswa_data', { ...data.siswa_data, pekerjaan_ayah: e.target.value })}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all"
+                                    placeholder="Pekerjaan ayah"
+                                />
+                            </div>
+
+                            {/* Pekerjaan Ibu */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    Pekerjaan Ibu
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.siswa_data.pekerjaan_ibu}
+                                    onChange={(e) => setData('siswa_data', { ...data.siswa_data, pekerjaan_ibu: e.target.value })}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all"
+                                    placeholder="Pekerjaan ibu"
+                                />
+                            </div>
+
+                            {/* No HP Orang Tua */}
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    No HP Orang Tua/Wali
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.siswa_data.no_hp_ortu}
+                                    onChange={(e) => setData('siswa_data', { ...data.siswa_data, no_hp_ortu: e.target.value })}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all"
+                                    placeholder="08xxxxxxxxxx"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Role Assignment */}
                 <div className="bg-white rounded-2xl shadow-lg p-8 border-2 border-gray-100">

@@ -55,6 +55,10 @@ class SiswaExamController extends Controller
                 $examDate = Carbon::parse($item->tanggal_ujian);
                 $item->is_available = $examDate->lte($now) && $item->status === 'berlangsung';
 
+                // Check if exam has expired (past the scheduled time + duration)
+                $examEndTime = $examDate->copy()->addMinutes($item->durasi_menit);
+                $item->is_expired = $now->gt($examEndTime);
+
                 return $item;
             });
 

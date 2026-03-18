@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\Permission;
 use App\Models\Kelas;
 use App\Models\Siswa;
+use App\Models\Guru;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -78,10 +79,32 @@ class UserController extends Controller
                 'password' => 'required|string|min:8|confirmed',
                 'phone' => 'nullable|string|max:15',
                 'address' => 'nullable|string',
+                'nik' => 'nullable|string|max:16',
+                'jenis_kelamin' => 'required|in:L,P',
+                'tempat_lahir' => 'nullable|string|max:100',
+                'tanggal_lahir' => 'nullable|date',
                 'is_active' => 'boolean',
                 'roles' => 'required|array|min:1',
                 'roles.*' => 'exists:roles,id',
                 'kelas_id' => 'nullable|exists:kelas,id',
+
+                // Guru data validation
+                'guru_data.nip' => 'nullable|string|max:50',
+                'guru_data.pendidikan_terakhir' => 'nullable|string|in:SMA,D3,S1,S2,S3',
+                'guru_data.status_kepegawaian' => 'nullable|string|in:PNS,GTY,GTT,Honorer',
+                'guru_data.tanggal_masuk' => 'nullable|date',
+                'guru_data.bank' => 'nullable|string|max:50',
+                'guru_data.no_rekening' => 'nullable|string|max:50',
+
+                // Siswa data validation
+                'siswa_data.nis' => 'nullable|string|max:50',
+                'siswa_data.nisn' => 'nullable|string|max:10',
+                'siswa_data.nama_ayah' => 'nullable|string|max:255',
+                'siswa_data.nama_ibu' => 'nullable|string|max:255',
+                'siswa_data.no_hp_ortu' => 'nullable|string|max:15',
+                'siswa_data.pekerjaan_ayah' => 'nullable|string|max:100',
+                'siswa_data.pekerjaan_ibu' => 'nullable|string|max:100',
+                'siswa_data.tahun_masuk' => 'nullable|integer|min:2000|max:' . (date('Y') + 1),
             ]);
 
             $user = User::create([
@@ -90,6 +113,10 @@ class UserController extends Controller
                 'password' => Hash::make($validated['password']),
                 'phone' => $validated['phone'] ?? null,
                 'address' => $validated['address'] ?? null,
+                'nik' => $validated['nik'] ?? null,
+                'jenis_kelamin' => $validated['jenis_kelamin'],
+                'tempat_lahir' => $validated['tempat_lahir'] ?? null,
+                'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
                 'is_active' => $validated['is_active'] ?? true,
                 'institution_id' => Auth::user()->institution_id,
             ]);
@@ -100,17 +127,62 @@ class UserController extends Controller
             // Check if user has 'siswa' role
             $roles = Role::whereIn('id', $validated['roles'])->pluck('name')->toArray();
             if (in_array('siswa', $roles)) {
-                // Create siswa entry
+                $siswaData = $request->input('siswa_data', []);
+
+                // Create siswa entry with data from form
                 Siswa::create([
                     'user_id' => $user->id,
                     'institution_id' => $user->institution_id,
+                    'nis' => $siswaData['nis'] ?? null,
+                    'nisn' => $siswaData['nisn'] ?? null,
+                    'nik' => $user->nik,
                     'nama_lengkap' => $user->name,
+                    'jenis_kelamin' => $user->jenis_kelamin,
+                    'tempat_lahir' => $user->tempat_lahir ?? '-',
+                    'tanggal_lahir' => $user->tanggal_lahir ?? now(),
                     'email' => $user->email,
                     'no_hp' => $user->phone,
                     'alamat' => $user->address,
                     'kelas_id' => $validated['kelas_id'] ?? null,
+                    'nama_ayah' => $siswaData['nama_ayah'] ?? null,
+                    'nama_ibu' => $siswaData['nama_ibu'] ?? null,
+                    'pekerjaan_ayah' => $siswaData['pekerjaan_ayah'] ?? null,
+                    'pekerjaan_ibu' => $siswaData['pekerjaan_ibu'] ?? null,
+                    'no_hp_ortu' => $siswaData['no_hp_ortu'] ?? null,
+                    'tahun_masuk' => $siswaData['tahun_masuk'] ?? date('Y'),
                     'status' => 'aktif',
                     'tanggal_masuk' => now(),
+                ]);
+            }
+
+            // Check if user has 'guru' role
+            if (in_array('guru', $roles)) {
+                $guruData = $request->input('guru_data', []);
+
+                // Auto-generate NIP if not provided
+                $nip = !empty($guruData['nip'])
+                    ? $guruData['nip']
+                    : 'GRU' . str_pad($user->id, 6, '0', STR_PAD_LEFT);
+
+                // Create guru entry with data from form
+                Guru::create([
+                    'user_id' => $user->id,
+                    'institution_id' => $user->institution_id,
+                    'nip' => $nip,
+                    'nik' => $user->nik ?? '-',
+                    'nama_lengkap' => $user->name,
+                    'jenis_kelamin' => $user->jenis_kelamin,
+                    'tempat_lahir' => $user->tempat_lahir ?? '-',
+                    'tanggal_lahir' => $user->tanggal_lahir ?? now(),
+                    'email' => $user->email,
+                    'no_hp' => $user->phone ?? '-',
+                    'alamat' => $user->address ?? '-',
+                    'pendidikan_terakhir' => $guruData['pendidikan_terakhir'] ?? 'S1',
+                    'status_kepegawaian' => $guruData['status_kepegawaian'] ?? 'GTY',
+                    'tanggal_masuk' => !empty($guruData['tanggal_masuk']) ? $guruData['tanggal_masuk'] : now(),
+                    'bank' => $guruData['bank'] ?? null,
+                    'no_rekening' => $guruData['no_rekening'] ?? null,
+                    'status' => 'aktif',
                 ]);
             }
 
@@ -207,6 +279,43 @@ class UserController extends Controller
                 }
             }
 
+            // Check if user has 'guru' role
+            if (in_array('guru', $roles)) {
+                // Check if guru entry exists
+                $guru = Guru::where('user_id', $user->id)->first();
+
+                if ($guru) {
+                    // Update existing guru
+                    $guru->update([
+                        'nama_lengkap' => $user->name,
+                        'email' => $user->email,
+                        'no_hp' => $user->phone,
+                        'alamat' => $user->address,
+                    ]);
+                } else {
+                    // Auto-generate NIP based on user ID
+                    $nip = 'GRU' . str_pad($user->id, 6, '0', STR_PAD_LEFT);
+
+                    // Create new guru entry
+                    Guru::create([
+                        'user_id' => $user->id,
+                        'institution_id' => $user->institution_id,
+                        'nip' => $nip,
+                        'nama_lengkap' => $user->name,
+                        'email' => $user->email,
+                        'no_hp' => $user->phone ?? '-',
+                        'alamat' => $user->address ?? '-',
+                        'jenis_kelamin' => 'L', // Default, bisa diubah nanti
+                        'tempat_lahir' => '-', // Default, bisa diubah nanti
+                        'tanggal_lahir' => now(), // Default, bisa diubah nanti
+                        'pendidikan_terakhir' => 'S1', // Default, bisa diubah nanti
+                        'status_kepegawaian' => 'GTY', // Default GTY (Guru Tetap Yayasan)
+                        'status' => 'aktif',
+                        'tanggal_masuk' => now(),
+                    ]);
+                }
+            }
+
             return redirect()->route('users.index')
                 ->with('success', 'User berhasil diperbarui');
         } catch (\Exception $e) {
@@ -272,50 +381,90 @@ class UserController extends Controller
     /**
      * Sync users with siswa role to siswa master data table
      */
-    public function syncSiswaToMasterData()
+    public function syncUsersToMasterData()
     {
         try {
-            // Get siswa role
+            // Get roles
             $siswaRole = Role::where('name', 'siswa')->first();
+            $guruRole = Role::where('name', 'guru')->first();
 
-            if (!$siswaRole) {
-                return redirect()->back()->with('error', 'Role siswa tidak ditemukan');
-            }
+            $syncedSiswa = 0;
+            $skippedSiswa = 0;
+            $syncedGuru = 0;
+            $skippedGuru = 0;
 
-            // Get all users with siswa role
-            $siswaUsers = User::whereHas('roles', function ($q) use ($siswaRole) {
-                $q->where('roles.id', $siswaRole->id);
-            })->get();
+            // Sync Siswa
+            if ($siswaRole) {
+                $siswaUsers = User::whereHas('roles', function ($q) use ($siswaRole) {
+                    $q->where('roles.id', $siswaRole->id);
+                })->get();
 
-            $synced = 0;
-            $skipped = 0;
+                foreach ($siswaUsers as $user) {
+                    $existingSiswa = Siswa::where('user_id', $user->id)->first();
 
-            foreach ($siswaUsers as $user) {
-                // Check if siswa entry already exists
-                $existingSiswa = Siswa::where('user_id', $user->id)->first();
-
-                if (!$existingSiswa) {
-                    // Create new siswa entry
-                    Siswa::create([
-                        'user_id' => $user->id,
-                        'institution_id' => $user->institution_id,
-                        'nama_lengkap' => $user->name,
-                        'email' => $user->email,
-                        'no_hp' => $user->phone,
-                        'alamat' => $user->address,
-                        'status' => 'aktif',
-                        'tanggal_masuk' => $user->created_at ?? now(),
-                    ]);
-                    $synced++;
-                } else {
-                    $skipped++;
+                    if (!$existingSiswa) {
+                        Siswa::create([
+                            'user_id' => $user->id,
+                            'institution_id' => $user->institution_id,
+                            'nama_lengkap' => $user->name,
+                            'email' => $user->email,
+                            'no_hp' => $user->phone,
+                            'alamat' => $user->address,
+                            'status' => 'aktif',
+                            'tanggal_masuk' => $user->created_at ?? now(),
+                        ]);
+                        $syncedSiswa++;
+                    } else {
+                        $skippedSiswa++;
+                    }
                 }
             }
 
-            return redirect()->back()->with(
-                'success',
-                "Sinkronisasi selesai! {$synced} siswa berhasil ditambahkan ke master data, {$skipped} sudah ada."
-            );
+            // Sync Guru
+            if ($guruRole) {
+                $guruUsers = User::whereHas('roles', function ($q) use ($guruRole) {
+                    $q->where('roles.id', $guruRole->id);
+                })->get();
+
+                foreach ($guruUsers as $user) {
+                    $existingGuru = Guru::where('user_id', $user->id)->first();
+
+                    if (!$existingGuru) {
+                        // Auto-generate NIP based on user ID
+                        $nip = 'GRU' . str_pad($user->id, 6, '0', STR_PAD_LEFT);
+
+                        Guru::create([
+                            'user_id' => $user->id,
+                            'institution_id' => $user->institution_id,
+                            'nip' => $nip,
+                            'nama_lengkap' => $user->name,
+                            'email' => $user->email,
+                            'no_hp' => $user->phone ?? '-',
+                            'alamat' => $user->address ?? '-',
+                            'jenis_kelamin' => 'L', // Default, bisa diubah nanti
+                            'tempat_lahir' => '-', // Default, bisa diubah nanti
+                            'tanggal_lahir' => $user->created_at ?? now(), // Default, bisa diubah nanti
+                            'pendidikan_terakhir' => 'S1', // Default, bisa diubah nanti
+                            'status_kepegawaian' => 'GTY', // Default GTY (Guru Tetap Yayasan)
+                            'status' => 'aktif',
+                            'tanggal_masuk' => $user->created_at ?? now(),
+                        ]);
+                        $syncedGuru++;
+                    } else {
+                        $skippedGuru++;
+                    }
+                }
+            }
+
+            $message = "Sinkronisasi selesai! ";
+            if ($syncedSiswa > 0 || $skippedSiswa > 0) {
+                $message .= "{$syncedSiswa} siswa berhasil disinkronkan, {$skippedSiswa} sudah ada. ";
+            }
+            if ($syncedGuru > 0 || $skippedGuru > 0) {
+                $message .= "{$syncedGuru} guru berhasil disinkronkan, {$skippedGuru} sudah ada.";
+            }
+
+            return redirect()->back()->with('success', $message);
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Gagal sinkronisasi: ' . $e->getMessage());

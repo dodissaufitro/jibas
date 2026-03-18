@@ -5,50 +5,60 @@ namespace App\Http\Controllers;
 use App\Models\Institution;
 use App\Models\Kelas;
 use App\Models\Siswa;
+use App\Imports\SiswaImport;
+use App\Exports\SiswaTemplateExport;
+use App\Exports\SiswaExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Validation\ValidationException;
 
 class SiswaController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Siswa::with('kelas.jenjang', 'institution')->orderBy('nama_lengkap');
+        $query = Siswa::with(['kelas.jenjang', 'kelas.jurusan', 'institution'])
+            ->orderBy('nama_lengkap');
 
-        // Auto-filter by logged-in user's institution
         $user = Auth::user();
         $userInstitutionId = $user ? $user->institution_id : null;
 
-        // If user has institution, auto-filter by it (unless manually filtering by another institution)
-        if ($userInstitutionId && !$request->has('institution_id')) {
-            $query->where('institution_id', $userInstitutionId);
-        } elseif ($request->has('institution_id') && $request->institution_id != '') {
-            // Manual filter by institution (for super admin)
+        // Filter by institution ONLY if explicitly requested
+        if ($request->filled('institution_id')) {
             $query->where('institution_id', $request->institution_id);
         }
 
-        // Auto-filter by guru's assigned kelas if user is a guru with specific kelas access
-        if ($user && $user->guru && $user->guru->kelas()->exists()) {
-            $kelasIds = $user->guru->kelas()->pluck('kelas.id')->toArray();
-            if (!empty($kelasIds)) {
-                $query->whereIn('kelas_id', $kelasIds);
-            }
-        }
-
-        // Filter by kelas
-        if ($request->has('kelas_id') && $request->kelas_id != '') {
+        // Filter by kelas ONLY if explicitly requested
+        if ($request->filled('kelas_id')) {
             $query->where('kelas_id', $request->kelas_id);
         }
 
+        // Search by name or NIS
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                  ->orWhere('nis', 'like', "%{$search}%")
+                  ->orWhere('nisn', 'like', "%{$search}%");
+            });
+        }
+
         $siswa = $query->paginate(15)->withQueryString();
-        $kelasList = Kelas::with('jenjang', 'jurusan')->orderBy('tingkat')->orderBy('nama_kelas')->get();
-        $institutions = Institution::select('id', 'name')->where('is_active', true)->orderBy('name')->get();
+        $kelasList = Kelas::with('jenjang', 'jurusan')
+            ->orderBy('tingkat')
+            ->orderBy('nama_kelas')
+            ->get();
+        $institutions = Institution::select('id', 'name')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
         return Inertia::render('Akademik/Siswa/Index', [
             'siswa' => $siswa,
             'kelasList' => $kelasList,
             'institutions' => $institutions,
-            'filters' => $request->only(['kelas_id', 'institution_id']),
+            'filters' => $request->only(['kelas_id', 'institution_id', 'search']),
             'userInstitutionId' => $userInstitutionId,
         ]);
     }
@@ -133,5 +143,78 @@ class SiswaController extends Controller
 
         return redirect()->route('akademik.siswa.index')
             ->with('success', 'Data siswa berhasil dihapus');
+    }
+
+    /**
+     * Show import form
+     */
+    public function importForm()
+    {
+        $kelas = Kelas::with(['jenjang', 'jurusan'])->orderBy('tingkat')->orderBy('nama_kelas')->get();
+
+        return Inertia::render('Akademik/Siswa/Import', [
+            'kelas' => $kelas
+        ]);
+    }
+
+    /**
+     * Import siswa from Excel
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:2048',
+        ], [
+            'file.required' => 'File Excel wajib dipilih',
+            'file.mimes' => 'File harus berformat Excel (.xlsx, .xls, atau .csv)',
+            'file.max' => 'Ukuran file maksimal 2MB',
+        ]);
+
+        try {
+            $import = new SiswaImport();
+            Excel::import($import, $request->file('file'));
+
+            $successCount = $import->getSuccessCount();
+            $errorCount = $import->getErrorCount();
+            $errors = $import->getErrors();
+
+            if ($errorCount > 0) {
+                $errorMessage = "Berhasil import {$successCount} data, {$errorCount} data gagal. Errors: " . implode('; ', $errors);
+                return redirect()->route('akademik.siswa.index')
+                    ->with('warning', $errorMessage);
+            }
+
+            return redirect()->route('akademik.siswa.index')
+                ->with('success', "Berhasil import {$successCount} data siswa");
+        } catch (ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->with('error', 'Validasi gagal: ' . implode('; ', array_map(fn($err) => implode(', ', $err), $e->errors())));
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download template Excel for import
+     */
+    public function downloadTemplate()
+    {
+        return Excel::download(new SiswaTemplateExport(), 'template_import_siswa.xlsx');
+    }
+
+    /**
+     * Export siswa to Excel
+     */
+    public function export(Request $request)
+    {
+        $kelasId = $request->input('kelas_id');
+        $institutionId = $request->input('institution_id');
+
+        return Excel::download(
+            new SiswaExport($kelasId, $institutionId),
+            'data_siswa_' . date('Y-m-d_His') . '.xlsx'
+        );
     }
 }

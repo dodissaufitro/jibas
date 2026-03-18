@@ -29,6 +29,13 @@ class User extends Authenticatable
         'email',
         'password',
         'institution_id',
+        'phone',
+        'address',
+        'nik',
+        'jenis_kelamin',
+        'tempat_lahir',
+        'tanggal_lahir',
+        'is_active',
     ];
 
     /**
@@ -114,6 +121,53 @@ class User extends Authenticatable
             return $this->roles->contains('name', $role);
         }
         return (bool) $role->intersect($this->roles)->count();
+    }
+
+    /**
+     * Assign a role to the user.
+     */
+    public function assignRole($role)
+    {
+        if (is_string($role)) {
+            $role = Role::where('name', $role)->firstOrFail();
+        }
+
+        if (!$this->roles->contains($role->id)) {
+            $this->roles()->attach($role->id);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Remove a role from the user.
+     */
+    public function removeRole($role)
+    {
+        if (is_string($role)) {
+            $role = Role::where('name', $role)->firstOrFail();
+        }
+
+        $this->roles()->detach($role->id);
+
+        return $this;
+    }
+
+    /**
+     * Sync roles for the user.
+     */
+    public function syncRoles($roles)
+    {
+        $roleIds = collect($roles)->map(function ($role) {
+            if (is_string($role)) {
+                return Role::where('name', $role)->firstOrFail()->id;
+            }
+            return $role instanceof Role ? $role->id : $role;
+        })->toArray();
+
+        $this->roles()->sync($roleIds);
+
+        return $this;
     }
 
     /**

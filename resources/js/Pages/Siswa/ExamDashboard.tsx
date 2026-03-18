@@ -28,6 +28,7 @@ interface Ujian {
     nilai: number | null;
     ujian_siswa_id: number | null;
     is_available: boolean;
+    is_expired: boolean;
 }
 
 interface UjianSelesai {
@@ -294,7 +295,15 @@ export default function ExamDashboard({ siswa, ujianAktif, ujianSelesai, stats }
                                             </div>
                                             
                                             <div className="mt-4 pt-4 border-t border-white/10">
-                                                {ujian.status_pengerjaan === 'belum_mulai' && (
+                                                {ujian.status_pengerjaan === 'belum_mulai' && ujian.is_expired && (
+                                                    <div className="w-full inline-flex items-center justify-center px-6 py-3 bg-red-500/20 border-2 border-red-400/50 text-red-300 rounded-xl font-semibold cursor-not-allowed">
+                                                        <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                        Ujian Telah Berakhir
+                                                    </div>
+                                                )}
+                                                {ujian.status_pengerjaan === 'belum_mulai' && !ujian.is_expired && (
                                                     <Link
                                                         href={route('siswa.ujian.mulai', ujian.id)}
                                                         className="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"

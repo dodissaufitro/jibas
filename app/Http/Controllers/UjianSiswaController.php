@@ -98,6 +98,8 @@ class UjianSiswaController extends Controller
                     'waktu_mulai' => $ujianSiswa && $ujianSiswa->waktu_mulai ? $ujianSiswa->waktu_mulai->toISOString() : null,
                     'waktu_selesai' => $ujianSiswa && $ujianSiswa->waktu_selesai ? $ujianSiswa->waktu_selesai->toISOString() : null,
                     'ujian_siswa_id' => $ujianSiswa ? $ujianSiswa->id : null,
+                    // Check if exam has expired
+                    'is_expired' => Carbon::parse($item->tanggal_ujian)->addMinutes($item->durasi_menit)->isPast(),
                 ];
             })
                 ->values() // Reset array keys

@@ -31,6 +31,7 @@ interface Ujian {
     waktu_mulai: string | null;
     waktu_selesai: string | null;
     ujian_siswa_id: number | null;
+    is_expired: boolean;
 }
 
 interface Siswa {
@@ -286,7 +287,15 @@ export default function Index({ ujian, siswa }: Props) {
                                             )}
                                         </div>
                                         <div className="flex flex-col space-y-2 lg:ml-6">
-                                            {item.status_pengerjaan === 'belum_mulai' && (
+                                            {item.status_pengerjaan === 'belum_mulai' && item.is_expired && (
+                                                <div className="inline-flex items-center justify-center rounded-xl bg-red-100 border-2 border-red-300 px-6 py-3 text-red-700 font-semibold cursor-not-allowed">
+                                                    <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    Ujian Telah Berakhir
+                                                </div>
+                                            )}
+                                            {item.status_pengerjaan === 'belum_mulai' && !item.is_expired && (
                                                 <Link
                                                     href={route('siswa.ujian.mulai', item.id)}
                                                     className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-6 py-3 text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-indigo-700"

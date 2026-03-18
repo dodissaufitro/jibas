@@ -28,6 +28,7 @@ interface Ujian {
     nilai: number | null;
     ujian_siswa_id: number | null;
     is_available: boolean;
+    is_expired: boolean;
 }
 
 interface Siswa {
@@ -423,7 +424,16 @@ export default function OnlineExam({ siswa, ujianAktif }: Props) {
 
                                                 {/* Right Section - Action Button */}
                                                 <div className="flex-shrink-0 lg:ml-6 flex items-center">
-                                                    {ujian.status_pengerjaan === 'belum_mulai' && ujian.is_available && (
+                                                    {ujian.status_pengerjaan === 'belum_mulai' && ujian.is_expired && (
+                                                        <div className="w-full lg:w-auto px-8 py-4 bg-red-100 border-2 border-red-300 text-red-700 font-bold rounded-2xl flex items-center justify-center space-x-3 text-lg cursor-not-allowed">
+                                                            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            <span>Ujian Telah Berakhir</span>
+                                                        </div>
+                                                    )}
+
+                                                    {ujian.status_pengerjaan === 'belum_mulai' && ujian.is_available && !ujian.is_expired && (
                                                         <button
                                                             onClick={() => handleMulaiUjian(ujian.id)}
                                                             className="btn-3d w-full lg:w-auto px-8 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-2xl shadow-xl flex items-center justify-center space-x-3 text-lg"
@@ -460,7 +470,7 @@ export default function OnlineExam({ siswa, ujianAktif }: Props) {
                                                         </button>
                                                     )}
 
-                                                    {ujian.status_pengerjaan === 'belum_mulai' && !ujian.is_available && (
+                                                    {ujian.status_pengerjaan === 'belum_mulai' && !ujian.is_available && !ujian.is_expired && (
                                                         <div className="w-full lg:w-auto px-8 py-4 bg-gray-200 text-gray-600 font-bold rounded-2xl flex items-center justify-center space-x-3 text-lg cursor-not-allowed">
                                                             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />

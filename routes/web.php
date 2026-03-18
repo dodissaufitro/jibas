@@ -98,8 +98,17 @@ Route::middleware('auth')->group(function () {
 
     // Akademik Routes
     Route::prefix('akademik')->name('akademik.')->middleware('permission:view_akademik')->group(function () {
+        // Siswa routes with import/export
+        Route::get('siswa/import', [SiswaController::class, 'importForm'])->name('siswa.import-form');
+        Route::post('siswa/import', [SiswaController::class, 'import'])->name('siswa.import');
+        Route::get('siswa/download-template', [SiswaController::class, 'downloadTemplate'])->name('siswa.download-template');
+        Route::get('siswa/export', [SiswaController::class, 'export'])->name('siswa.export');
         Route::resource('siswa', SiswaController::class);
+
+        // Guru Management
         Route::resource('guru', GuruController::class);
+        Route::post('/guru-sync', [GuruController::class, 'syncData'])->name('guru.sync');
+        Route::get('/guru-data-by-institution', [GuruController::class, 'getDataByInstitution'])->name('guru.data-by-institution');
         Route::resource('jadwal', JadwalPelajaranController::class);
         Route::get('/nilai', fn() => Inertia::render('ComingSoon', ['module' => 'Akademik - Penilaian']))->name('nilai');
         Route::get('/raport', fn() => Inertia::render('ComingSoon', ['module' => 'Akademik - Raport']))->name('raport');
@@ -219,8 +228,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/permissions', [UserController::class, 'permissions'])->name('permissions');
             Route::put('/roles/{roleId}/permissions', [UserController::class, 'updateRolePermissions'])->name('roles.permissions.update');
 
-            // Sync Siswa to Master Data
-            Route::post('/sync-siswa', [UserController::class, 'syncSiswaToMasterData'])->name('sync-siswa');
+            // Sync Users to Master Data (Siswa & Guru)
+            Route::post('/sync-users', [UserController::class, 'syncUsersToMasterData'])->name('sync-users');
         });
 
         // Role Management Routes
