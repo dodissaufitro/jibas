@@ -1,4 +1,4 @@
-import React, { FormEventHandler } from 'react';
+import React, { FormEventHandler, useRef } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
 
@@ -29,6 +29,7 @@ interface Siswa {
     status: string;
     tanggal_masuk: string;
     tanggal_keluar: string | null;
+    foto?: string | null;
 }
 
 interface Props {
@@ -37,7 +38,14 @@ interface Props {
 }
 
 export default function Edit({ siswa, kelas }: Props) {
-    const { data, setData, patch, processing, errors } = useForm({
+    const { data, setData, post, processing, errors } = useForm<{
+        nis: string; nisn: string; nik: string; nama_lengkap: string;
+        jenis_kelamin: string; tempat_lahir: string; tanggal_lahir: string;
+        alamat: string; email: string; no_hp: string; nama_ayah: string;
+        nama_ibu: string; no_hp_ortu: string; kelas_id: string;
+        status: string; tanggal_masuk: string; tanggal_keluar: string;
+        foto: File | null; _method: string;
+    }>({
         nis: siswa.nis,
         nisn: siswa.nisn,
         nik: siswa.nik || '',
@@ -55,11 +63,23 @@ export default function Edit({ siswa, kelas }: Props) {
         status: siswa.status,
         tanggal_masuk: siswa.tanggal_masuk,
         tanggal_keluar: siswa.tanggal_keluar || '',
+        foto: null,
+        _method: 'PATCH',
     });
+
+    const fotoRef = useRef<HTMLInputElement>(null);
+    const [fotoPreview, setFotoPreview] = React.useState<string | null>(null);
+
+    const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+        setData('foto', file);
+        if (file) setFotoPreview(URL.createObjectURL(file));
+        else setFotoPreview(null);
+    };
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        patch(route('akademik.siswa.update', siswa.id));
+        post(route('akademik.siswa.update', siswa.id), { forceFormData: true });
     };
 
     return (
@@ -272,6 +292,28 @@ export default function Edit({ siswa, kelas }: Props) {
                                         {errors.no_hp && (
                                             <p className="mt-1 text-sm text-red-600">{errors.no_hp}</p>
                                         )}
+                                    </div>
+
+                                    {/* Foto */}
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700">Foto Siswa</label>
+                                        <div className="mt-1 flex items-center gap-4">
+                                            {(fotoPreview || siswa.foto) && (
+                                                <img
+                                                    src={fotoPreview ?? `/storage/${siswa.foto}`}
+                                                    alt="foto"
+                                                    className="w-16 h-16 rounded-full object-cover border"
+                                                />
+                                            )}
+                                            <input
+                                                ref={fotoRef}
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleFotoChange}
+                                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                            />
+                                        </div>
+                                        {errors.foto && <p className="mt-1 text-sm text-red-600">{errors.foto}</p>}
                                     </div>
                                 </div>
                             </div>

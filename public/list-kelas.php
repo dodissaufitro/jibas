@@ -5,6 +5,9 @@ require __DIR__ . '/../vendor/autoload.php';
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
+// Import DB facade
+use Illuminate\Support\Facades\DB;
+
 echo "<html><head><title>Daftar Kelas ID</title>";
 echo "<style>
     body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
@@ -50,6 +53,7 @@ try {
     }
 } catch (Exception $e) {
     echo "<p style='color: red;'>❌ Error: " . $e->getMessage() . "</p>";
+    echo "<pre style='background: #ffe6e6; padding: 10px; border-radius: 4px;'>" . $e->getTraceAsString() . "</pre>";
 }
 
 echo "</body></html>";

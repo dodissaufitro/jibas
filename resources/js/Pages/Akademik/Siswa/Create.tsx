@@ -1,4 +1,4 @@
-import React, { FormEventHandler } from 'react';
+import React, { FormEventHandler, useRef } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
 
@@ -15,7 +15,13 @@ interface Props {
 }
 
 export default function Create({ kelas }: Props) {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors } = useForm<{
+        nis: string; nisn: string; nik: string; nama_lengkap: string;
+        jenis_kelamin: string; tempat_lahir: string; tanggal_lahir: string;
+        alamat: string; email: string; no_hp: string; nama_ayah: string;
+        nama_ibu: string; no_hp_ortu: string; kelas_id: string;
+        status: string; tanggal_masuk: string; foto: File | null;
+    }>({
         nis: '',
         nisn: '',
         nik: '',
@@ -32,11 +38,22 @@ export default function Create({ kelas }: Props) {
         kelas_id: '',
         status: 'aktif',
         tanggal_masuk: '',
+        foto: null,
     });
+
+    const fotoRef = useRef<HTMLInputElement>(null);
+    const [fotoPreview, setFotoPreview] = React.useState<string | null>(null);
+
+    const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+        setData('foto', file);
+        if (file) setFotoPreview(URL.createObjectURL(file));
+        else setFotoPreview(null);
+    };
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route('akademik.siswa.store'));
+        post(route('akademik.siswa.store'), { forceFormData: true });
     };
 
     return (
@@ -249,6 +266,24 @@ export default function Create({ kelas }: Props) {
                                         {errors.no_hp && (
                                             <p className="mt-1 text-sm text-red-600">{errors.no_hp}</p>
                                         )}
+                                    </div>
+
+                                    {/* Foto */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Foto Siswa</label>
+                                        <div className="mt-1 flex items-center gap-4">
+                                            {fotoPreview && (
+                                                <img src={fotoPreview} alt="preview" className="w-16 h-16 rounded-full object-cover border" />
+                                            )}
+                                            <input
+                                                ref={fotoRef}
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleFotoChange}
+                                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                            />
+                                        </div>
+                                        {errors.foto && <p className="mt-1 text-sm text-red-600">{errors.foto}</p>}
                                     </div>
                                 </div>
                             </div>

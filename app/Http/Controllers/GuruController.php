@@ -6,10 +6,13 @@ use App\Models\Guru;
 use App\Models\Institution;
 use App\Models\Kelas;
 use App\Models\MataPelajaran;
+use App\Imports\GuruImport;
+use App\Exports\GuruTemplateExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 class GuruController extends Controller
 {
@@ -346,5 +349,35 @@ class GuruController extends Controller
             return redirect()->back()
                 ->with('error', 'Gagal sinkronisasi: ' . $e->getMessage());
         }
+    }
+
+    public function importForm()
+    {
+        return Inertia::render('Akademik/Guru/Import');
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate(['file' => 'required|mimes:xlsx,xls,csv|max:5120']);
+        try {
+            $import = new GuruImport();
+            Excel::import($import, $request->file('file'));
+            $successCount = $import->getSuccessCount();
+            $errorCount   = $import->getErrorCount();
+            $errors       = $import->getErrors();
+            if ($errorCount > 0) {
+                return redirect()->route('akademik.guru.index')
+                    ->with('warning', "Berhasil import {$successCount} data, {$errorCount} gagal: " . implode('; ', $errors));
+            }
+            return redirect()->route('akademik.guru.index')
+                ->with('success', "Berhasil import {$successCount} data guru");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    public function downloadTemplate()
+    {
+        return Excel::download(new GuruTemplateExport(), 'template_import_guru.xlsx');
     }
 }

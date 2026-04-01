@@ -164,9 +164,9 @@ class SiswaTemplateExport implements FromCollection, WithHeadings, WithStyles, W
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function(AfterSheet $event) {
+            AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-                
+
                 // Add instructions below the data
                 $instructionRow = 6;
                 $sheet->setCellValue('A' . $instructionRow, '📋 PETUNJUK PENGISIAN:');
@@ -177,7 +177,7 @@ class SiswaTemplateExport implements FromCollection, WithHeadings, WithStyles, W
                         'color' => ['rgb' => '2C5F2D'],
                     ],
                 ]);
-                
+
                 $instructions = [
                     ['A', '✅ Data di atas adalah CONTOH. Anda bisa menghapus dan menggantinya dengan data siswa Anda.'],
                     ['A', '✅ Field WAJIB: nis, nama_lengkap, jenis_kelamin'],
@@ -189,7 +189,7 @@ class SiswaTemplateExport implements FromCollection, WithHeadings, WithStyles, W
                     ['A', '✅ Field Opsional: nisn, nik, email, no_hp, tempat_lahir, alamat, dll bisa dikosongkan'],
                     ['A', '✅ Status: aktif, lulus, pindah, atau keluar (default: aktif)'],
                 ];
-                
+
                 $currentRow = $instructionRow + 1;
                 foreach ($instructions as $instruction) {
                     $sheet->setCellValue($instruction[0] . $currentRow, $instruction[1]);
@@ -199,17 +199,17 @@ class SiswaTemplateExport implements FromCollection, WithHeadings, WithStyles, W
                     ]);
                     $currentRow++;
                 }
-                
+
                 // Merge cells for instructions
                 for ($i = $instructionRow + 1; $i < $currentRow; $i++) {
                     $sheet->mergeCells('A' . $i . ':P' . $i);
                 }
-                
+
                 // Auto-height for rows
                 for ($i = 1; $i <= $currentRow; $i++) {
                     $sheet->getRowDimension($i)->setRowHeight(-1);
                 }
-                
+
                 // Freeze first row
                 $sheet->freezePane('A2');
             },

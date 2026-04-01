@@ -47,15 +47,14 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-
     return Inertia::render('SchoolDashboard', [
         'stats' => [
-            'totalSiswa' => 856,
-            'totalGuru' => 48,
-            'totalKelas' => 24,
-            'ppdbAktif' => 156,
-            'tunggakan' => 26750000,
-            'presensiHariIni' => 94,
+            'totalSiswa'      => \App\Models\Siswa::count(),
+            'totalGuru'       => \App\Models\Guru::count(),
+            'totalKelas'      => \App\Models\Kelas::count(),
+            'ppdbAktif'       => \App\Models\PpdbPendaftaran::whereIn('status', ['pending', 'verifikasi'])->count(),
+            'tunggakan'       => \App\Models\Tagihan::whereIn('status', ['belum_bayar', 'dibayar_sebagian'])->sum('total') ?? 0,
+            'presensiHariIni' => \App\Models\PresensiSiswa::whereDate('tanggal', today())->count(),
         ]
     ]);
 })->middleware(['auth'])->name('dashboard');
@@ -103,9 +102,18 @@ Route::middleware('auth')->group(function () {
         Route::post('siswa/import', [SiswaController::class, 'import'])->name('siswa.import');
         Route::get('siswa/download-template', [SiswaController::class, 'downloadTemplate'])->name('siswa.download-template');
         Route::get('siswa/export', [SiswaController::class, 'export'])->name('siswa.export');
+        Route::get('siswa/bulk-update', [SiswaController::class, 'bulkUpdateForm'])->name('siswa.bulk-update-form');
+        Route::post('siswa/bulk-update', [SiswaController::class, 'bulkUpdate'])->name('siswa.bulk-update');
+        Route::get('siswa/download-update-template', [SiswaController::class, 'downloadUpdateTemplate'])->name('siswa.download-update-template');
+        Route::get('siswa-statistik', [SiswaController::class, 'dashboard'])->name('siswa.dashboard');
+        Route::post('siswa/{siswa}/reset-password', [SiswaController::class, 'resetPassword'])->name('siswa.reset-password');
+        Route::post('siswa/{siswa}/generate-account', [SiswaController::class, 'generateUserAccount'])->name('siswa.generate-account');
         Route::resource('siswa', SiswaController::class);
 
         // Guru Management
+        Route::get('guru/import', [GuruController::class, 'importForm'])->name('guru.import-form');
+        Route::post('guru/import', [GuruController::class, 'import'])->name('guru.import');
+        Route::get('guru/download-template', [GuruController::class, 'downloadTemplate'])->name('guru.download-template');
         Route::resource('guru', GuruController::class);
         Route::post('/guru-sync', [GuruController::class, 'syncData'])->name('guru.sync');
         Route::get('/guru-data-by-institution', [GuruController::class, 'getDataByInstitution'])->name('guru.data-by-institution');

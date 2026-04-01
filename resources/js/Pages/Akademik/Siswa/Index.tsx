@@ -46,6 +46,13 @@ interface Institution {
     name: string;
 }
 
+interface Stats {
+    totalSiswa: number;
+    totalAktif: number;
+    totalLakiLaki: number;
+    totalPerempuan: number;
+}
+
 interface Props {
     siswa: {
         data: Siswa[];
@@ -61,19 +68,26 @@ interface Props {
         kelas_id?: string;
         institution_id?: string;
         search?: string;
+        status?: string;
+        jenis_kelamin?: string;
     };
+    stats?: Stats;
 }
 
-export default function Index({ siswa, kelasList, institutions, filters }: Props) {
+export default function Index({ siswa, kelasList, institutions, filters, stats }: Props) {
     const [kelasId, setKelasId] = useState(filters.kelas_id || '');
     const [institutionId, setInstitutionId] = useState(filters.institution_id || '');
     const [search, setSearch] = useState(filters.search || '');
+    const [status, setStatus] = useState(filters.status || '');
+    const [jenisKelamin, setJenisKelamin] = useState(filters.jenis_kelamin || '');
 
     const handleFilter = () => {
-        router.get(route('akademik.siswa.index'), { 
-            kelas_id: kelasId, 
+        router.get(route('akademik.siswa.index'), {
+            kelas_id: kelasId,
             institution_id: institutionId,
-            search: search 
+            search: search,
+            status: status,
+            jenis_kelamin: jenisKelamin,
         }, { preserveState: true });
     };
     const handleDelete = (id: number, nama: string) => {
@@ -96,6 +110,28 @@ export default function Index({ siswa, kelasList, institutions, filters }: Props
         <SidebarLayout>
             <Head title="Data Siswa" />
 
+            {/* Stats Cards */}
+            {stats && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <p className="text-sm text-gray-600">Total Siswa</p>
+                        <p className="text-2xl font-bold text-blue-600">{stats.totalSiswa}</p>
+                    </div>
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <p className="text-sm text-gray-600">Siswa Aktif</p>
+                        <p className="text-2xl font-bold text-green-600">{stats.totalAktif}</p>
+                    </div>
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <p className="text-sm text-gray-600">Laki-laki</p>
+                        <p className="text-2xl font-bold text-indigo-600">{stats.totalLakiLaki}</p>
+                    </div>
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                        <p className="text-sm text-gray-600">Perempuan</p>
+                        <p className="text-2xl font-bold text-pink-600">{stats.totalPerempuan}</p>
+                    </div>
+                </div>
+            )}
+
             <div className="mb-6">
                 <div className="flex justify-between items-center mb-4">
                     <div>
@@ -106,30 +142,39 @@ export default function Index({ siswa, kelasList, institutions, filters }: Props
                             Total: <span className="font-semibold text-blue-600">{siswa.total}</span> siswa terdaftar
                         </p>
                     </div>
-                    <div className="flex space-x-3">
+                    <div className="flex flex-wrap gap-2">
                         <Link
                             href={route('akademik.siswa.import-form')}
-                            className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                            className="inline-flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
                         >
-                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                             </svg>
-                            Import Excel
+                            Import
+                        </Link>
+                        <Link
+                            href={route('akademik.siswa.bulk-update-form')}
+                            className="inline-flex items-center px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors"
+                        >
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Bulk Update
                         </Link>
                         <button
-                            onClick={() => window.location.href = route('akademik.siswa.export', { kelas_id: kelasId, institution_id: institutionId })}
-                            className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
+                            onClick={() => window.location.href = route('akademik.siswa.export', { kelas_id: kelasId, institution_id: institutionId, search, status })}
+                            className="inline-flex items-center px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
                         >
-                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            Export Excel
+                            Export
                         </button>
                         <Link
                             href={route('akademik.siswa.create')}
-                            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                            className="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
                         >
-                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                             </svg>
                             Tambah Siswa
@@ -177,16 +222,46 @@ export default function Index({ siswa, kelasList, institutions, filters }: Props
                             <select
                                 value={institutionId}
                                 onChange={(e) => setInstitutionId(e.target.value)}
-                            className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                            <option value="">Semua Institusi</option>
-                            {institutions.map((inst) => (
-                                <option key={inst.id} value={inst.id}>
-                                    {inst.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                                className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                <option value="">Semua Institusi</option>
+                                {institutions.map((inst) => (
+                                    <option key={inst.id} value={inst.id}>
+                                        {inst.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                📋 Filter Status
+                            </label>
+                            <select
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value)}
+                                className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                <option value="">Semua Status</option>
+                                <option value="aktif">Aktif</option>
+                                <option value="lulus">Lulus</option>
+                                <option value="pindah">Pindah</option>
+                                <option value="keluar">Keluar</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                ⚥ Jenis Kelamin
+                            </label>
+                            <select
+                                value={jenisKelamin}
+                                onChange={(e) => setJenisKelamin(e.target.value)}
+                                className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                <option value="">Semua</option>
+                                <option value="L">Laki-laki</option>
+                                <option value="P">Perempuan</option>
+                            </select>
+                        </div>
                     <div className="flex items-end gap-2">
                         <button
                             onClick={handleFilter}
@@ -194,12 +269,14 @@ export default function Index({ siswa, kelasList, institutions, filters }: Props
                         >
                             Filter
                         </button>
-                        {(kelasId || institutionId || search) && (
+                        {(kelasId || institutionId || search || status || jenisKelamin) && (
                             <button
                                 onClick={() => {
                                     setKelasId('');
                                     setInstitutionId('');
                                     setSearch('');
+                                    setStatus('');
+                                    setJenisKelamin('');
                                     router.get(route('akademik.siswa.index'));
                                 }}
                                 className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition-colors"
@@ -289,13 +366,37 @@ export default function Index({ siswa, kelasList, institutions, filters }: Props
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                         <div className="flex space-x-2">
                                                             <Link
+                                                                href={route('akademik.siswa.show', item.id)}
+                                                                className="text-green-600 hover:text-green-900"
+                                                                title="Lihat Detail"
+                                                            >
+                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                </svg>
+                                                            </Link>
+                                                            <Link
                                                                 href={route('akademik.siswa.edit', item.id)}
                                                                 className="text-blue-600 hover:text-blue-900"
+                                                                title="Edit"
                                                             >
                                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                                 </svg>
                                                             </Link>
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (confirm(`Reset password ${item.nama_lengkap} ke NIS (${item.nis})?`)) {
+                                                                        router.post(route('akademik.siswa.reset-password', item.id));
+                                                                    }
+                                                                }}
+                                                                className="text-orange-500 hover:text-orange-700"
+                                                                title="Reset Password"
+                                                            >
+                                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                                                                </svg>
+                                                            </button>
                                                             <button
                                                                 onClick={() => handleDelete(item.id, item.nama_lengkap)}
                                                                 className="text-red-600 hover:text-red-900"

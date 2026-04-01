@@ -17,11 +17,15 @@ class SiswaExport implements FromQuery, WithHeadings, WithMapping, WithStyles, W
 {
     protected $kelasId;
     protected $institutionId;
+    protected $search;
+    protected $status;
 
-    public function __construct($kelasId = null, $institutionId = null)
+    public function __construct($kelasId = null, $institutionId = null, $search = null, $status = null)
     {
-        $this->kelasId = $kelasId;
+        $this->kelasId       = $kelasId;
         $this->institutionId = $institutionId;
+        $this->search        = $search;
+        $this->status        = $status;
     }
 
     public function query()
@@ -34,6 +38,20 @@ class SiswaExport implements FromQuery, WithHeadings, WithMapping, WithStyles, W
 
         if ($this->kelasId) {
             $query->where('kelas_id', $this->kelasId);
+        }
+
+        if ($this->status) {
+            $query->where('status', $this->status);
+        }
+
+        if ($this->search) {
+            $search = $this->search;
+            $query->where(
+                fn($q) =>
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                    ->orWhere('nis', 'like', "%{$search}%")
+                    ->orWhere('nisn', 'like', "%{$search}%")
+            );
         }
 
         return $query->orderBy('nama_lengkap');

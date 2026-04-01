@@ -23,6 +23,7 @@ class SiswaImport implements ToCollection, WithHeadingRow, SkipsOnError, WithBat
     protected $successCount = 0;
     protected $errorCount = 0;
     protected $errors = [];
+    protected $duplicateCount = 0;
 
     public function collection(Collection $rows)
     {
@@ -39,11 +40,20 @@ class SiswaImport implements ToCollection, WithHeadingRow, SkipsOnError, WithBat
                     continue;
                 }
 
-                // Validasi basic
+                // Validasi duplikat NIS
                 if (Siswa::where('nis', $row['nis'])->exists()) {
+                    $this->duplicateCount++;
                     $this->errorCount++;
                     $this->errors[] = "Baris " . ($index + 2) . ": NIS {$row['nis']} sudah terdaftar";
                     Log::warning('Duplicate NIS', ['nis' => $row['nis']]);
+                    continue;
+                }
+
+                // Validasi duplikat NISN
+                if (!empty($row['nisn']) && Siswa::where('nisn', $row['nisn'])->exists()) {
+                    $this->duplicateCount++;
+                    $this->errorCount++;
+                    $this->errors[] = "Baris " . ($index + 2) . ": NISN {$row['nisn']} sudah terdaftar";
                     continue;
                 }
 
@@ -152,5 +162,10 @@ class SiswaImport implements ToCollection, WithHeadingRow, SkipsOnError, WithBat
     public function getErrors()
     {
         return $this->errors;
+    }
+
+    public function getDuplicates(): int
+    {
+        return $this->duplicateCount;
     }
 }
