@@ -8,6 +8,7 @@ use App\Http\Controllers\JurusanController;
 use App\Http\Controllers\KelasController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MataPelajaranController;
+use App\Http\Controllers\NilaiController;
 use App\Http\Controllers\OrangTuaController;
 use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\PpdbPendaftaranController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\PpdbPengumumanController;
 use App\Http\Controllers\PresensiGuruController;
 use App\Http\Controllers\PresensiSiswaController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RaportController;
 use App\Http\Controllers\RekapPresensiSiswaController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\SiswaExamController;
@@ -32,7 +34,9 @@ use Inertia\Inertia;
 // Custom Login Routes
 Route::middleware('guest')->group(function () {
     Route::get('/custom-login', [LoginController::class, 'show'])->name('custom.login.show');
-    Route::post('/custom-login', [LoginController::class, 'login'])->name('custom.login');
+    Route::post('/custom-login', [LoginController::class, 'login'])
+        ->middleware('throttle:' . config('ratelimit.login.max_attempts', 5) . ',' . config('ratelimit.login.decay_minutes', 15))
+        ->name('custom.login');
 });
 
 Route::middleware('auth')->group(function () {
@@ -64,7 +68,7 @@ Route::get('/settings', function () {
 })->middleware(['auth'])->name('settings');
 
 // Institution Settings API
-Route::middleware('auth')->prefix('api')->group(function () {
+Route::middleware(['auth', 'throttle:' . config('ratelimit.api.max_requests', 60) . ',' . config('ratelimit.api.per_minutes', 1)])->prefix('api')->group(function () {
     Route::get('/institution/settings', [InstitutionController::class, 'getSettings'])->name('api.institution.settings');
     Route::post('/institution/settings', [InstitutionController::class, 'updateSettings'])->name('api.institution.update');
     Route::post('/institution/share-access', [InstitutionController::class, 'shareAccess'])->name('api.institution.share');
@@ -118,8 +122,18 @@ Route::middleware('auth')->group(function () {
         Route::post('/guru-sync', [GuruController::class, 'syncData'])->name('guru.sync');
         Route::get('/guru-data-by-institution', [GuruController::class, 'getDataByInstitution'])->name('guru.data-by-institution');
         Route::resource('jadwal', JadwalPelajaranController::class);
-        Route::get('/nilai', fn() => Inertia::render('ComingSoon', ['module' => 'Akademik - Penilaian']))->name('nilai');
-        Route::get('/raport', fn() => Inertia::render('ComingSoon', ['module' => 'Akademik - Raport']))->name('raport');
+
+        // Penilaian (Input & View Nilai)
+        Route::get('/nilai', [NilaiController::class, 'index'])->name('nilai');
+        Route::get('/nilai/input', [NilaiController::class, 'input'])->name('nilai.input');
+        Route::post('/nilai/store', [NilaiController::class, 'store'])->name('nilai.store');
+
+        // Raport
+        Route::get('/raport', [RaportController::class, 'index'])->name('raport');
+        Route::post('/raport/generate', [RaportController::class, 'generate'])->name('raport.generate');
+        Route::get('/raport/{siswaId}', [RaportController::class, 'show'])->name('raport.show');
+        Route::patch('/raport/{id}/catatan', [RaportController::class, 'updateCatatan'])->name('raport.update-catatan');
+        Route::post('/raport/publish', [RaportController::class, 'publish'])->name('raport.publish');
     });
 
     // Ujian Routes (dengan granular permissions)

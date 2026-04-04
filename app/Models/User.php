@@ -36,6 +36,11 @@ class User extends Authenticatable
         'tempat_lahir',
         'tanggal_lahir',
         'is_active',
+        'password_changed_at',
+        'force_password_change',
+        'last_login_at',
+        'last_login_ip',
+        'password_history',
     ];
 
     /**
@@ -60,6 +65,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
+            'password_changed_at' => 'datetime',
+            'force_password_change' => 'boolean',
         ];
     }
 

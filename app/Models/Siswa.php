@@ -74,4 +74,42 @@ class Siswa extends Model
     {
         return $this->hasMany(Tagihan::class);
     }
+
+    /**
+     * Get common relations for listing pages (lightweight)
+     */
+    public function getCommonRelations(): array
+    {
+        return [
+            'kelas.jenjang',
+            'kelas.jurusan',
+            'institution:id,name',
+        ];
+    }
+
+    /**
+     * Get detailed relations for detail/show pages
+     */
+    public function getDetailRelations(): array
+    {
+        return [
+            'kelas.jenjang',
+            'kelas.jurusan',
+            'institution',
+            'user',
+            'orangTua',
+            'presensi' => fn($q) => $q->orderBy('tanggal', 'desc')->limit(30),
+            'tagihan' => fn($q) => $q->with('pembayaran')->orderBy('created_at', 'desc'),
+            'nilai.mataPelajaran',
+        ];
+    }
+
+    /**
+     * Scope for efficient listing with pagination
+     */
+    public function scopeForListing($query)
+    {
+        return $query->with($this->getCommonRelations())
+            ->select('siswa.*'); // Explicit select to allow joins
+    }
 }

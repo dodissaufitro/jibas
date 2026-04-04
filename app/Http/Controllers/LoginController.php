@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\UserService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +12,12 @@ use Inertia\Response;
 
 class LoginController extends Controller
 {
+    protected UserService $userService;
+
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
     /**
      * Display the custom login view.
      */
@@ -34,8 +41,31 @@ class LoginController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
+            // Record login activity
+            $this->userService->recordLogin(
+                Auth::user(),
+                $request->ip()
+            );
+
+            // Log successful authentication
+            \App\Models\ActivityLog::logAuth(
+                'login_success',
+                'User berhasil login',
+                ['email' => $credentials['email']]
+            );
+
             return redirect()->intended(route('dashboard'));
         }
+
+        // Log failed login attempt
+        \App\Models\ActivityLog::logAuth(
+            'login_failed',
+            'Percobaan login gagal',
+            [
+                'email' => $credentials['email'],
+                'reason' => 'Invalid credentials'
+            ]
+        );
 
         throw ValidationException::withMessages([
             'email' => 'Email atau password yang Anda masukkan salah.',
@@ -47,6 +77,9 @@ class LoginController extends Controller
      */
     public function logout(Request $request): RedirectResponse
     {
+        // Log logout
+        \App\Models\ActivityLog::logAuth('logout', 'User logout');
+
         Auth::logout();
 
         $request->session()->invalidate();

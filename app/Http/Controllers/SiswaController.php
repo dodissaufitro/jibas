@@ -12,6 +12,8 @@ use App\Imports\SiswaUpdateImport;
 use App\Exports\SiswaTemplateExport;
 use App\Exports\SiswaUpdateTemplateExport;
 use App\Exports\SiswaExport;
+use App\Rules\SecureFileUpload;
+use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +26,12 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class SiswaController extends Controller
 {
+    protected UserService $userService;
+
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
     public function index(Request $request)
     {
         $query = Siswa::with(['kelas.jenjang', 'kelas.jurusan', 'institution'])
@@ -118,7 +126,7 @@ class SiswaController extends Controller
             'kelas_id'      => 'required|exists:kelas,id',
             'status'        => 'required|in:aktif,lulus,pindah,keluar',
             'tanggal_masuk' => 'required|date',
-            'foto'          => 'nullable|image|max:2048',
+            'foto'          => ['nullable', SecureFileUpload::photo(2048)],
         ]);
 
         if ($request->hasFile('foto')) {
@@ -126,30 +134,47 @@ class SiswaController extends Controller
         }
 
         $validated['institution_id'] = Auth::user()?->institution_id;
+        $generatedPassword = null;
 
-        DB::transaction(function () use ($validated) {
+        DB::transaction(function () use ($validated, &$generatedPassword) {
             $siswa = Siswa::create($validated);
 
             if (!empty($validated['email'])) {
-                $userAccount = User::firstOrCreate(
-                    ['email' => $validated['email']],
-                    [
+                // Check if user already exists
+                $existingUser = User::where('email', $validated['email'])->first();
+
+                if ($existingUser) {
+                    $userAccount = $existingUser;
+                    $generatedPassword = null; // User already has password
+                } else {
+                    // Create new user with secure password
+                    $result = $this->userService->createUser([
                         'name'           => $validated['nama_lengkap'],
-                        'password'       => Hash::make($validated['nis']),
+                        'email'          => $validated['email'],
                         'institution_id' => $validated['institution_id'],
-                    ]
-                );
-                if (method_exists($userAccount, 'assignRole')) {
-                    $userAccount->assignRole('siswa');
+                    ]);
+
+                    $userAccount = $result['user'];
+                    $generatedPassword = $result['plainPassword'];
+
+                    if (method_exists($userAccount, 'assignRole')) {
+                        $userAccount->assignRole('siswa');
+                    }
                 }
+
                 $siswa->update(['user_id' => $userAccount->id]);
             }
 
             ActivityLog::log('create', $siswa, "Siswa {$siswa->nama_lengkap} (NIS: {$siswa->nis}) ditambahkan", [], $siswa->toArray());
         });
 
+        $message = 'Data siswa berhasil ditambahkan';
+        if (isset($generatedPassword) && $generatedPassword) {
+            $message .= ". Password login: {$generatedPassword} (Harap dicatat dan diberikan kepada siswa)";
+        }
+
         return redirect()->route('akademik.siswa.index')
-            ->with('success', 'Data siswa berhasil ditambahkan');
+            ->with('success', $message);
     }
 
     public function edit(Siswa $siswa)
@@ -182,7 +207,7 @@ class SiswaController extends Controller
             'status'         => 'required|in:aktif,lulus,pindah,keluar',
             'tanggal_masuk'  => 'required|date',
             'tanggal_keluar' => 'nullable|date',
-            'foto'           => 'nullable|image|max:2048',
+            'foto'           => ['nullable', SecureFileUpload::photo(2048)],
         ]);
 
         $oldValues = $siswa->toArray();
@@ -358,9 +383,13 @@ class SiswaController extends Controller
         if (!$userAccount) {
             return redirect()->back()->with('error', 'Siswa ini belum memiliki akun user.');
         }
-        $userAccount->update(['password' => Hash::make($siswa->nis)]);
-        ActivityLog::log('reset_password', $siswa, "Password siswa {$siswa->nama_lengkap} direset ke NIS");
-        return redirect()->back()->with('success', "Password {$siswa->nama_lengkap} berhasil direset ke NIS ({$siswa->nis})");
+
+        // Generate new secure password
+        $newPassword = $this->userService->resetPassword($userAccount);
+
+        ActivityLog::log('reset_password', $siswa, "Password siswa {$siswa->nama_lengkap} direset", [], ['user_id' => $userAccount->id]);
+
+        return redirect()->back()->with('success', "Password {$siswa->nama_lengkap} berhasil direset. Password baru: {$newPassword} (Harap dicatat dan diberikan kepada siswa)");
     }
 
     public function generateUserAccount(Siswa $siswa)
@@ -373,15 +402,19 @@ class SiswaController extends Controller
             return redirect()->back()->with('error', 'Siswa tidak memiliki email. Tambahkan email terlebih dahulu untuk membuat akun.');
         }
 
-        DB::transaction(function () use ($siswa) {
-            $userAccount = User::firstOrCreate(
-                ['email' => $siswa->email],
-                [
-                    'name'           => $siswa->nama_lengkap,
-                    'password'       => Hash::make($siswa->nis),
-                    'institution_id' => $siswa->institution_id,
-                ]
-            );
+        $generatedPassword = null;
+
+        DB::transaction(function () use ($siswa, &$generatedPassword) {
+            // Create user with secure password
+            $result = $this->userService->createUser([
+                'name'           => $siswa->nama_lengkap,
+                'email'          => $siswa->email,
+                'institution_id' => $siswa->institution_id,
+            ]);
+
+            $userAccount = $result['user'];
+            $generatedPassword = $result['plainPassword'];
+
             if (method_exists($userAccount, 'assignRole')) {
                 $userAccount->assignRole('siswa');
             }
@@ -389,7 +422,7 @@ class SiswaController extends Controller
             ActivityLog::log('generate_account', $siswa, "Akun user dibuat untuk siswa {$siswa->nama_lengkap} (NIS: {$siswa->nis})");
         });
 
-        return redirect()->back()->with('success', "Akun user untuk {$siswa->nama_lengkap} berhasil dibuat. Password default: {$siswa->nis}");
+        return redirect()->back()->with('success', "Akun user untuk {$siswa->nama_lengkap} berhasil dibuat. Password: {$generatedPassword} (Harap dicatat dan diberikan kepada siswa)");
     }
 
     public function bulkUpdateForm()

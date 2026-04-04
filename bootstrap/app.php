@@ -25,6 +25,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'role' => \App\Http\Middleware\CheckRole::class,
             'kelas.access' => \App\Http\Middleware\CheckKelasAccess::class,
+            'password.expired' => \App\Http\Middleware\CheckPasswordExpired::class,
+        ]);
+
+        // Apply password expiration check globally for authenticated routes
+        $middleware->web(append: [
+            \App\Http\Middleware\CheckPasswordExpired::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
